@@ -18,7 +18,11 @@ import {
 import { generateJitteredKeyBetween } from 'fractional-indexing-jittered';
 import { TiptapTransformer } from '@hocuspocus/transformer';
 import * as Y from 'yjs';
-import { markdownToHtml } from '@docmost/editor-ext';
+import {
+  markdownToHtml,
+  extractFrontmatter,
+  parseYamlFrontmatter,
+} from '@docmost/editor-ext';
 import {
   FileTaskStatus,
   FileTaskType,
@@ -128,6 +132,19 @@ export class ImportService {
 
   async processMarkdown(markdownInput: string): Promise<any> {
     try {
+      const frontmatter = extractFrontmatter(markdownInput);
+      if (frontmatter) {
+        const html = await markdownToHtml(frontmatter.body);
+        const pmDoc = await this.processHTML(html);
+        const properties = parseYamlFrontmatter(frontmatter.yaml);
+        if (properties.length > 0 && pmDoc?.content) {
+          pmDoc.content.unshift({
+            type: 'pageProperties',
+            attrs: { properties },
+          });
+        }
+        return pmDoc;
+      }
       const html = await markdownToHtml(markdownInput);
       return this.processHTML(html);
     } catch (err) {

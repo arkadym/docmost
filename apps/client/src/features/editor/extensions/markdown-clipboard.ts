@@ -3,7 +3,11 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { DOMParser } from "@tiptap/pm/model";
 import { find } from "linkifyjs";
-import { markdownToHtml } from "@docmost/editor-ext";
+import {
+  markdownToHtml,
+  parseYamlFrontmatter,
+  extractFrontmatter,
+} from "@docmost/editor-ext";
 
 export const MarkdownClipboard = Extension.create({
   name: "markdownClipboard",
@@ -29,6 +33,31 @@ export const MarkdownClipboard = Extension.create({
             }
 
             const text = event.clipboardData.getData("text/plain");
+
+            // Handle YAML frontmatter from ANY source (VS Code, Obsidian, plain text, etc.)
+            // This must run before the VS Code language check so it intercepts all pastes.
+            const frontmatter = extractFrontmatter(text);
+            if (frontmatter) {
+              const { tr } = view.state;
+              const { from, to } = view.state.selection;
+              const properties = parseYamlFrontmatter(frontmatter.yaml);
+              if (properties.length > 0) {
+                this.editor.commands.insertPageProperties(properties);
+              }
+              const bodyHtml = markdownToHtml(frontmatter.body);
+              if (frontmatter.body.trim()) {
+                const contentNodes = DOMParser.fromSchema(
+                  this.editor.schema,
+                ).parseSlice(elementFromString(bodyHtml), {
+                  preserveWhitespace: true,
+                });
+                tr.replaceRange(from, to, contentNodes);
+                tr.setMeta("paste", true);
+                view.dispatch(tr);
+              }
+              return true;
+            }
+
             const vscode = event.clipboardData.getData("vscode-editor-data");
             const vscodeData = vscode ? JSON.parse(vscode) : undefined;
             const language = vscodeData?.mode;

@@ -47,7 +47,8 @@ import {
   SharedStorage,
   Columns,
   Column,
-  Status
+  Status,
+  PageProperties
 } from "@docmost/editor-ext";
 import {
   randomElement,
@@ -93,6 +94,7 @@ import i18n from "@/i18n.ts";
 import { MarkdownClipboard } from "@/features/editor/extensions/markdown-clipboard.ts";
 import EmojiCommand from "./emoji-command";
 import { countWords } from "alfaaz";
+import PagePropertiesView from "@/features/editor/components/page-properties/page-properties-view.tsx";
 
 const lowlight = createLowlight(common);
 lowlight.register("mermaid", plaintext);
@@ -318,6 +320,9 @@ export const mainExtensions = [
   }),
   Status.configure({
     view: StatusView,
+  }),
+  PageProperties.configure({
+    view: PagePropertiesView,
   }),
   MarkdownClipboard.configure({
     transformPastedText: true,

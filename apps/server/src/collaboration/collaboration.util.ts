@@ -36,6 +36,7 @@ import {
   Columns,
   Column,
   Status,
+  PageProperties,
   addUniqueIdsToDoc,
   htmlToMarkdown,
 } from '@docmost/editor-ext';
@@ -97,6 +98,7 @@ export const tiptapExtensions = [
   Columns,
   Column,
   Status,
+  PageProperties,
 ] as any;
 
 export function jsonToHtml(tiptapJson: any) {

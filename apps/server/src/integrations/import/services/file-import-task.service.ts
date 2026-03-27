@@ -18,7 +18,11 @@ import { generateSlugId } from '../../../common/helpers';
 import { v7 } from 'uuid';
 import { generateJitteredKeyBetween } from 'fractional-indexing-jittered';
 import { FileTask, InsertablePage } from '@docmost/db/types/entity.types';
-import { markdownToHtml } from '@docmost/editor-ext';
+import {
+  markdownToHtml,
+  extractFrontmatter,
+  parseYamlFrontmatter,
+} from '@docmost/editor-ext';
 import { getProsemirrorContent } from '../../../common/helpers/prosemirror/utils';
 import { formatImportHtml } from '../utils/import-formatter';
 import {
@@ -484,7 +488,15 @@ export class FileImportTaskService {
               content = await fs.readFile(absPath, 'utf-8');
 
               if (page.fileExtension.toLowerCase() === '.md') {
-                content = await markdownToHtml(content);
+                const fm = extractFrontmatter(content);
+                if (fm) {
+                  // Store parsed properties so we can prepend the node after
+                  // the HTML→ProseMirror conversion below.
+                  page['_frontmatterYaml'] = fm.yaml;
+                  content = await markdownToHtml(fm.body);
+                } else {
+                  content = await markdownToHtml(content);
+                }
               }
             } catch (err: any) {
               if (err?.code === 'ENOENT') {
@@ -518,6 +530,18 @@ export class FileImportTaskService {
             const pmState = getProsemirrorContent(
               await this.importService.processHTML(html),
             );
+
+            // Prepend pageProperties node if frontmatter was extracted
+            if (page['_frontmatterYaml']) {
+              const properties = parseYamlFrontmatter(page['_frontmatterYaml']);
+              if (properties.length > 0 && pmState?.content) {
+                pmState.content.unshift({
+                  type: 'pageProperties',
+                  attrs: { properties },
+                });
+              }
+              delete page['_frontmatterYaml'];
+            }
 
             const { title, prosemirrorJson } =
               this.importService.extractTitleAndRemoveHeading(pmState);
