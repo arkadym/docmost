@@ -21,7 +21,11 @@ jobs:
           IMAGE="ghcr.io/arkadym/docmost"
           VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
           MAJOR_MINOR="${VERSION%.*}"
-          echo "DOCKER_TAGS=${IMAGE}:${VERSION} ${IMAGE}:${MAJOR_MINOR} ${IMAGE}:latest" >> $GITHUB_ENV
+          TAGS="${IMAGE}:${VERSION} ${IMAGE}:${MAJOR_MINOR} ${IMAGE}:latest"
+          echo "VERSION=${VERSION}"
+          echo "DOCKER_TAGS=${TAGS}"
+          echo "GITHUB_ENV path: ${GITHUB_ENV}"
+          echo "DOCKER_TAGS=${TAGS}" >> "$GITHUB_ENV"
 
       - name: Install Docker CLI
         run: apk add --no-cache docker-cli
