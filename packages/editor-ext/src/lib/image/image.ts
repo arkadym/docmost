@@ -370,6 +370,15 @@ export const TiptapImage = Image.extend<ImageOptions>({
         dom.style.background = "";
       };
 
+      el.style.cursor = "zoom-in";
+      el.addEventListener("click", () => {
+        window.dispatchEvent(
+          new CustomEvent("open-image-lightbox", {
+            detail: { src: el.src, alt: el.alt },
+          }),
+        );
+      });
+
       return nodeView;
     };
   },

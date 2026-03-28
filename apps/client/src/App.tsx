@@ -39,6 +39,7 @@ import WorkspaceApiKeys from "@/ee/api-key/pages/workspace-api-keys";
 import AiSettings from "@/ee/ai/pages/ai-settings.tsx";
 import AuditLogs from "@/ee/audit/pages/audit-logs.tsx";
 import VerifyEmail from "@/ee/pages/verify-email.tsx";
+import ImageLightbox from "@/features/editor/components/common/image-lightbox.tsx";
 
 export default function App() {
   const { t } = useTranslation();
@@ -47,6 +48,7 @@ export default function App() {
 
   return (
     <>
+      <ImageLightbox />
       <Routes>
         <Route index element={<Navigate to="/home" />} />
         <Route path={"/login"} element={<LoginPage />} />
