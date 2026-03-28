@@ -17,8 +17,9 @@ in a lightbox and explore details that are not visible at document width.
 
 ## Trigger Convention
 
-- **Single click** → open lightbox
-- **Double click** → open editor (existing behavior for drawio/excalidraw/plantuml; no change)
+- **Single click** → open lightbox (all node types)
+- **Double click** → open editor for drawio/excalidraw/plantuml (existing behavior, no change)
+- Regular **images** have no double-click action — single click is the only interaction
 - In **read-only / share** views there is no editor, so single click is the only
   action — same lightbox opens
 
@@ -45,12 +46,18 @@ Internally it uses:
   - Zoom in (`+`)
   - Zoom out (`−`)
   - Reset zoom (fit to screen)
-  - Download button (same pattern as existing toolbar menus)
+  - Download button — all node types; images download in their native format,
+    diagrams (PlantUML, Draw.io, Excalidraw) download the stored SVG attachment
   - Close button (or press Escape via Modal)
 
-The modal background is dark/semi-transparent. The image is centered and starts
-fitted to the viewport (`initialScale` calculated to fit width or height,
-whichever is smaller).
+The modal background is dark/semi-transparent. The image is positioned as follows:
+- If the **native image size fits within the viewport** → display at 100% (no scaling)
+- If the **image is larger than the viewport** in either dimension → scale down to fit
+  entirely within the viewport (letterboxed), using the larger dimension as the
+  constraining axis
+
+This means small diagrams appear crisp and unscaled, while large/complex diagrams
+are scaled down to be fully visible on open. The user can then zoom in freely.
 
 ## Library
 
@@ -82,14 +89,16 @@ No backend changes. No TipTap extension changes. No new server routes.
 
 ## UX Details
 
-- Keyboard: `Escape` closes (Mantine Modal handles this)
-- Mouse wheel: zoom in/out centered on cursor
-- Click + drag: pan
-- Touch: pinch to zoom, drag to pan
-- Toolbar buttons: zoom +/−/reset, download
-- The viewer is read-only — no editing from within lightbox
-- Works identically in editor and read-only/share page contexts since the
-  lightbox does not interact with TipTap at all
+- **Keyboard**: `Escape` closes (Mantine Modal handles this)
+- **Mouse wheel**: zoom in/out centered on cursor
+- **Click + drag**: pan
+- **Touch**: pinch to zoom, drag to pan
+- **Toolbar buttons**: zoom +/−/reset, download
+- **Read-only**: the viewer is read-only — no editing from within lightbox
+- **Contexts**: works identically in editor and read-only/share page contexts since the lightbox does not interact with TipTap at all
+- **Download**: available for all node types; images download in their native format, diagrams (PlantUML, Draw.io, Excalidraw) download the stored SVG attachment
+- **Click on regular images**: single click opens the lightbox; no double-click action
+- **Initial zoom**: if the image fits within the viewport at 100%, it is displayed at 100%; if it exceeds the viewport in either dimension, it is scaled down to fit entirely, constrained by the larger dimension — the user can then zoom in freely
 
 ## Out of Scope
 
@@ -108,11 +117,3 @@ No backend changes. No TipTap extension changes. No new server routes.
 | **Modify** | `apps/client/src/features/editor/components/excalidraw/excalidraw-view.tsx` |
 | **Modify** | `apps/client/package.json` (add `react-zoom-pan-pinch`) |
 
-## Open Questions for Review
-
-1. Should the lightbox toolbar show a **Download** button for all node types, or
-   only for images (not diagrams)?  
-2. Should double-click on a regular **image** also open something (it currently
-   does nothing), or is single-click for lightbox sufficient?
-3. Preferred initial zoom behavior: **fit-to-screen** (see the whole diagram) or
-   **100% native size** (see full detail, may require scrolling)?
