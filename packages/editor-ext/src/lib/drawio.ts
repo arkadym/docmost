@@ -331,6 +331,20 @@ export const Drawio = Node.create<DrawioOptions>({
       el.addEventListener("error", clearLoadingStyle, { once: true });
       if (el.complete) clearLoadingStyle();
 
+      el.addEventListener("click", () => {
+        if (!editor.isEditable) {
+          window.dispatchEvent(
+            new CustomEvent("open-image-lightbox", {
+              detail: { src: el.src, alt: el.alt },
+            }),
+          );
+        }
+      });
+
+      if (!editor.isEditable) {
+        el.style.cursor = "zoom-in";
+      }
+
       return nodeView;
     };
   },
