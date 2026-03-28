@@ -5,6 +5,21 @@ import { mathInlineExtension } from "./math-inline.marked";
 
 marked.use({
   renderer: {
+    // @ts-ignore - marked v17 passes a token object; return false falls back to default renderer
+    code(token: { text: string; lang?: string }): string | false {
+      if (token.lang === 'plantuml') {
+        const encodedCode = token.text
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;');
+        return `<div data-type="plantuml" data-code="${encodedCode}"></div>`;
+      }
+      return false;
+    },
+  },
+});
+
+marked.use({
+  renderer: {
     // @ts-ignore
     list(body: string, isOrdered: boolean, start: number) {
       if (isOrdered) {
