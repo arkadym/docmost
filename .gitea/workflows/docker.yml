@@ -30,14 +30,6 @@ jobs:
             echo "DOCKER_TAGS=${IMAGE}:latest" >> $GITHUB_ENV
           fi
 
-      - name: Ensure Docker is available
-        run: |
-          if ! command -v docker &>/dev/null; then
-            apt-get update -qq
-            apt-get install -y -qq docker.io
-          fi
-          docker version
-
       - name: Log in to GHCR
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | \
