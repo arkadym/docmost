@@ -30,6 +30,9 @@ jobs:
             echo "DOCKER_TAGS=${IMAGE}:latest" >> $GITHUB_ENV
           fi
 
+      - name: Install Docker CLI
+        run: apk add --no-cache docker-cli
+
       - name: Log in to GHCR
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | \
