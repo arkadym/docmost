@@ -62,7 +62,12 @@ export const MarkdownClipboard = Extension.create({
             const vscodeData = vscode ? JSON.parse(vscode) : undefined;
             const language = vscodeData?.mode;
 
-            if (language !== "markdown") {
+            // Force markdown processing when the text contains custom fenced blocks
+            // (e.g. plantuml), because if the clipboard also carries text/html,
+            // ProseMirror would use that HTML and silently discard the code fence.
+            const hasCustomFence = /^```plantuml\b/m.test(text);
+
+            if (language !== "markdown" && !hasCustomFence) {
               return false;
             }
 
