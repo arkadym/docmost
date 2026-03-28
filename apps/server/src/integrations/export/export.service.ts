@@ -37,7 +37,7 @@ import {
   getAttachmentIds,
   getProsemirrorContent,
 } from '../../common/helpers/prosemirror/utils';
-import { htmlToMarkdown } from '@docmost/editor-ext';
+import { htmlToMarkdown, stringifyYamlFrontmatter } from '@docmost/editor-ext';
 
 @Injectable()
 export class ExportService {
@@ -73,6 +73,18 @@ export class ExportService {
       prosemirrorJson = getProsemirrorContent(page.content);
     }
 
+    // Extract pageProperties node (always first) before adding title
+    let frontmatter = '';
+    const content: any[] = prosemirrorJson.content ?? [];
+    const propIndex = content.findIndex((n: any) => n.type === 'pageProperties');
+    if (propIndex !== -1) {
+      const [propNode] = content.splice(propIndex, 1);
+      const properties = propNode?.attrs?.properties;
+      if (Array.isArray(properties) && properties.length > 0) {
+        frontmatter = stringifyYamlFrontmatter(properties);
+      }
+    }
+
     if (page.title) {
       prosemirrorJson.content.unshift(titleNode);
     }
@@ -94,7 +106,8 @@ export class ExportService {
         /<colgroup[^>]*>[\s\S]*?<\/colgroup>/gim,
         '',
       );
-      return htmlToMarkdown(newPageHtml);
+      const markdown = htmlToMarkdown(newPageHtml);
+      return frontmatter ? `${frontmatter}\n\n${markdown}` : markdown;
     }
 
     return;
