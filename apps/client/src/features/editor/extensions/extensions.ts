@@ -36,6 +36,7 @@ import {
   CustomCodeBlock,
   Drawio,
   Excalidraw,
+  PlantUml,
   Embed,
   SearchAndReplace,
   Mention,
@@ -73,6 +74,7 @@ import AttachmentView from "@/features/editor/components/attachment/attachment-v
 import CodeBlockView from "@/features/editor/components/code-block/code-block-view.tsx";
 import DrawioView from "../components/drawio/drawio-view";
 import ExcalidrawView from "@/features/editor/components/excalidraw/excalidraw-view.tsx";
+import PlantUmlView from "@/features/editor/components/plantuml/plantuml-view.tsx";
 import EmbedView from "@/features/editor/components/embed/embed-view.tsx";
 import SubpagesView from "@/features/editor/components/subpages/subpages-view.tsx";
 import { common, createLowlight } from "lowlight";
@@ -323,6 +325,19 @@ export const mainExtensions = [
   }),
   PageProperties.configure({
     view: PagePropertiesView,
+  }),
+  PlantUml.configure({
+    view: PlantUmlView,
+    resize: {
+      enabled: true,
+      directions: ["left", "right"],
+      minWidth: 80,
+      minHeight: 40,
+      alwaysPreserveAspectRatio: true,
+      //@ts-ignore
+      createCustomHandle: createResizeHandle,
+      className: buildResizeClasses("node-plantuml"),
+    },
   }),
   MarkdownClipboard.configure({
     transformPastedText: true,

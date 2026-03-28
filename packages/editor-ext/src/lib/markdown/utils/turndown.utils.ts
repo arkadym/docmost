@@ -19,6 +19,7 @@ export function htmlToMarkdown(html: string): string {
     TurndownPluginGfm.highlightedCodeBlock,
     taskList,
     callout,
+    plantuml,
     preserveDetail,
     listParagraph,
     mathInline,
@@ -37,6 +38,21 @@ function listParagraph(turndownService: _TurndownService) {
         return content;
       }
       return `\n\n${content}\n\n`;
+    },
+  });
+}
+
+function plantuml(turndownService: _TurndownService) {
+  turndownService.addRule('plantuml', {
+    filter: function (node: HTMLInputElement) {
+      return (
+        node.nodeName === 'DIV' &&
+        node.getAttribute('data-type') === 'plantuml'
+      );
+    },
+    replacement: function (_content: string, node: HTMLInputElement) {
+      const code = node.getAttribute('data-code') || '';
+      return `\n\n\`\`\`plantuml\n${code}\n\`\`\`\n\n`;
     },
   });
 }

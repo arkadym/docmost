@@ -49,6 +49,10 @@ export class EnvironmentVariables {
   MAIL_DRIVER: string;
 
   @IsOptional()
+  @IsUrl({ protocols: ['http', 'https'], require_tld: false })
+  PLANTUML_SERVER_URL: string;
+
+  @IsOptional()
   @IsIn(['local', 's3'])
   STORAGE_DRIVER: string;
 
