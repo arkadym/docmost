@@ -26,6 +26,7 @@ import {
   IconLayoutAlignLeft,
   IconLayoutAlignRight,
   IconTrash,
+  IconZoomIn,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { getFileUrl } from "@/lib/config.ts";
@@ -206,6 +207,15 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
       .run();
   }, [editor]);
 
+  const handleView = useCallback(() => {
+    if (!editorState?.src) return;
+    window.dispatchEvent(
+      new CustomEvent("open-image-lightbox", {
+        detail: { src: getFileUrl(editorState.src), alt: "PlantUML" },
+      }),
+    );
+  }, [editorState?.src]);
+
   const handleDownload = useCallback(() => {
     if (!editorState?.src) return;
     const url = getFileUrl(editorState.src);
@@ -268,6 +278,12 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
           </Tooltip>
 
           <div className={classes.divider} />
+
+          <Tooltip position="top" label={t("View")} withinPortal={false}>
+            <ActionIcon onClick={handleView} size="lg" variant="subtle">
+              <IconZoomIn size={18} />
+            </ActionIcon>
+          </Tooltip>
 
           <Tooltip position="top" label={t("Edit")} withinPortal={false}>
             <ActionIcon onClick={handleOpen} size="lg" variant="subtle">

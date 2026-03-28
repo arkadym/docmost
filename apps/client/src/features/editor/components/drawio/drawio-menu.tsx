@@ -23,6 +23,7 @@ import {
   IconDownload,
   IconEdit,
   IconTrash,
+  IconZoomIn,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { getDrawioUrl, getFileUrl } from "@/lib/config.ts";
@@ -307,6 +308,25 @@ export function DrawioMenu({ editor }: EditorMenuProps) {
           </Tooltip>
 
           <div className={classes.divider} />
+
+          <Tooltip position="top" label={t("View")} withinPortal={false}>
+            <ActionIcon
+              onClick={() => {
+                const src = editor.getAttributes("drawio")?.src;
+                if (!src) return;
+                window.dispatchEvent(
+                  new CustomEvent("open-image-lightbox", {
+                    detail: { src: getFileUrl(src), alt: "Draw.io" },
+                  }),
+                );
+              }}
+              size="lg"
+              aria-label={t("View")}
+              variant="subtle"
+            >
+              <IconZoomIn size={18} />
+            </ActionIcon>
+          </Tooltip>
 
           <Tooltip position="top" label={t("Edit")} withinPortal={false}>
             <ActionIcon

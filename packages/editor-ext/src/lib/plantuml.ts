@@ -330,19 +330,13 @@ export const PlantUml = Node.create<PlantUmlOptions>({
       dom.style.background =
         'light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-6))';
 
-      el.onload = () => {
+      const clearLoadingStyle = () => {
         dom.style.pointerEvents = '';
         dom.style.background = '';
       };
-
-      el.style.cursor = 'zoom-in';
-      el.addEventListener('click', () => {
-        window.dispatchEvent(
-          new CustomEvent('open-image-lightbox', {
-            detail: { src: el.src, alt: el.alt },
-          }),
-        );
-      });
+      el.addEventListener('load', clearLoadingStyle, { once: true });
+      el.addEventListener('error', clearLoadingStyle, { once: true });
+      if (el.complete) clearLoadingStyle();
 
       return nodeView;
     };
