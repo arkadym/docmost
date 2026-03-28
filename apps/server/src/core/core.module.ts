@@ -21,6 +21,7 @@ import { ShareModule } from './share/share.module';
 import { NotificationModule } from './notification/notification.module';
 import { WatcherModule } from './watcher/watcher.module';
 import { SessionModule } from './session/session.module';
+import { DiagramsModule } from './diagrams/diagrams.module';
 import { ClsMiddleware } from 'nestjs-cls';
 
 @Module({
@@ -40,6 +41,7 @@ import { ClsMiddleware } from 'nestjs-cls';
     NotificationModule,
     WatcherModule,
     SessionModule,
+    DiagramsModule,
   ],
 })
 export class CoreModule implements NestModule {

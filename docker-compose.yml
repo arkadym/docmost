@@ -4,11 +4,13 @@ services:
     depends_on:
       - db
       - redis
+      - plantuml
     environment:
       APP_URL: 'http://localhost:3000'
       APP_SECRET: 'REPLACE_WITH_LONG_SECRET'
       DATABASE_URL: 'postgresql://docmost:STRONG_DB_PASSWORD@db:5432/docmost'
       REDIS_URL: 'redis://redis:6379'
+      PLANTUML_SERVER_URL: 'http://plantuml:8080'
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -31,6 +33,10 @@ services:
     restart: unless-stopped
     volumes:
       - redis_data:/data
+
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    restart: unless-stopped
 
 volumes:
   docmost:

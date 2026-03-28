@@ -34,6 +34,7 @@ import { uploadAttachmentAction } from "@/features/editor/components/attachment/
 import IconExcalidraw from "@/components/icons/icon-excalidraw";
 import IconMermaid from "@/components/icons/icon-mermaid";
 import IconDrawio from "@/components/icons/icon-drawio";
+import IconPlantUml from "@/components/icons/icon-plantuml";
 import { IconColumns4 } from "@/components/icons/icon-columns-4";
 import { IconColumns5 } from "@/components/icons/icon-columns-5";
 import {
@@ -365,6 +366,14 @@ const CommandGroups: SlashMenuGroupedItemsType = {
       icon: IconExcalidraw,
       command: ({ editor, range }: CommandProps) =>
         editor.chain().focus().deleteRange(range).setExcalidraw().run(),
+    },
+    {
+      title: "PlantUML diagram",
+      description: "Create UML diagrams with PlantUML syntax",
+      searchTerms: ["plantuml", "uml", "diagram", "sequence", "class"],
+      icon: IconPlantUml,
+      command: ({ editor, range }: CommandProps) =>
+        editor.chain().focus().deleteRange(range).setPlantUml().run(),
     },
     {
       title: "Date",

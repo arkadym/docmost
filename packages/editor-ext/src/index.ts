@@ -28,3 +28,4 @@ export * from "./lib/recreate-transform";
 export * from "./lib/columns";
 export * from "./lib/status";
 export * from "./lib/page-properties";
+export * from "./lib/plantuml";
