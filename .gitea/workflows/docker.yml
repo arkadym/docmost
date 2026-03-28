@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
 
 jobs:
   build:
@@ -21,14 +19,9 @@ jobs:
       - name: Determine image tags
         run: |
           IMAGE="ghcr.io/arkadym/docmost"
-          REF="${{ github.ref }}"
-          if [[ "$REF" == refs/tags/v* ]]; then
-            VERSION="${REF#refs/tags/v}"
-            MAJOR_MINOR="${VERSION%.*}"
-            echo "DOCKER_TAGS=${IMAGE}:${VERSION} ${IMAGE}:${MAJOR_MINOR} ${IMAGE}:latest" >> $GITHUB_ENV
-          else
-            echo "DOCKER_TAGS=${IMAGE}:latest" >> $GITHUB_ENV
-          fi
+          VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+          MAJOR_MINOR="${VERSION%.*}"
+          echo "DOCKER_TAGS=${IMAGE}:${VERSION} ${IMAGE}:${MAJOR_MINOR} ${IMAGE}:latest" >> $GITHUB_ENV
 
       - name: Install Docker CLI
         run: apk add --no-cache docker-cli
