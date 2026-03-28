@@ -14,14 +14,14 @@ jobs:
       - name: Checkout
         run: |
           git clone --depth 1 \
-            "https://x-token:${{ gitea.token }}@gitea.tegro.org/${{ gitea.repository }}.git" \
-            --branch "${{ gitea.ref_name }}" \
+            "https://x-token:${{ secrets.GITEA_TOKEN }}@gitea.tegro.org/${{ github.repository }}.git" \
+            --branch "${{ github.ref_name }}" \
             .
 
       - name: Determine image tags
         run: |
           IMAGE="ghcr.io/arkadym/docmost"
-          REF="${{ gitea.ref }}"
+          REF="${{ github.ref }}"
           if [[ "$REF" == refs/tags/v* ]]; then
             VERSION="${REF#refs/tags/v}"
             MAJOR_MINOR="${VERSION%.*}"
