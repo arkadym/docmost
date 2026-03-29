@@ -53,6 +53,7 @@ import {
 import ExcalidrawMenu from "./components/excalidraw/excalidraw-menu";
 import DrawioMenu from "./components/drawio/drawio-menu";
 import PlantUmlMenu from "./components/plantuml/plantuml-menu";
+import { XmindImportModal } from "./components/plantuml/xmind-import-modal";
 import { useCollabToken } from "@/features/auth/queries/auth-query.tsx";
 import SearchAndReplaceDialog from "@/features/editor/components/search-and-replace/search-and-replace-dialog.tsx";
 import { useDebouncedCallback, useDocumentVisibility } from "@mantine/hooks";
@@ -96,6 +97,8 @@ export default function PageEditor({
   const [showCommentPopup, setShowCommentPopup] = useAtom(showCommentPopupAtom);
   const [isLocalSynced, setIsLocalSynced] = useState(false);
   const [isRemoteSynced, setIsRemoteSynced] = useState(false);
+  const [xmindImportFile, setXmindImportFile] = useState<File | null>(null);
+  const [xmindImportEditorRef, setXmindImportEditorRef] = useState<Editor | null>(null);
   const [yjsConnectionStatus, setYjsConnectionStatus] = useAtom(
     yjsConnectionStatusAtom,
   );
@@ -331,6 +334,16 @@ export default function PageEditor({
   };
 
   useEffect(() => {
+    const handleXmindImport = (e: Event) => {
+      const { file, editor: editorInstance } = (e as CustomEvent).detail;
+      setXmindImportFile(file);
+      setXmindImportEditorRef(editorInstance);
+    };
+    window.addEventListener("open-xmind-import", handleXmindImport);
+    return () => window.removeEventListener("open-xmind-import", handleXmindImport);
+  }, []);
+
+  useEffect(() => {
     document.addEventListener("ACTIVE_COMMENT_EVENT", handleActiveCommentEvent);
     return () => {
       document.removeEventListener(
@@ -424,6 +437,13 @@ export default function PageEditor({
           </div>
         )}
         {showCommentPopup && <CommentDialog editor={editor} pageId={pageId} />}
+        <XmindImportModal
+          file={xmindImportFile}
+          pageId={pageId}
+          editor={xmindImportEditorRef}
+          opened={xmindImportFile !== null}
+          onClose={() => { setXmindImportFile(null); setXmindImportEditorRef(null); }}
+        />
       </div>
       <div
         onClick={() => editor.commands.focus("end")}

@@ -60,6 +60,14 @@ export const handlePaste = (
   if (event.clipboardData?.files.length && !hasHtmlTable) {
     event.preventDefault();
     for (const file of event.clipboardData.files) {
+      if (file.name.endsWith(".xmind")) {
+        window.dispatchEvent(
+          new CustomEvent("open-xmind-import", {
+            detail: { file, pageId, editor },
+          }),
+        );
+        continue;
+      }
       const pos = editor.state.selection.from;
       uploadImageAction(file, editor, pos, pageId);
       uploadVideoAction(file, editor, pos, pageId);
@@ -222,6 +230,15 @@ export const handleFileDrop = (
     event.preventDefault();
 
     for (const file of event.dataTransfer.files) {
+      if (file.name.endsWith(".xmind")) {
+        window.dispatchEvent(
+          new CustomEvent("open-xmind-import", {
+            detail: { file, pageId, editor },
+          }),
+        );
+        continue;
+      }
+
       const coordinates = editor.view.posAtCoords({
         left: event.clientX,
         top: event.clientY,

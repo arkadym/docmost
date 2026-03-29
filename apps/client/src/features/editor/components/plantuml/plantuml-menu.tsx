@@ -25,6 +25,7 @@ import {
   IconLayoutAlignCenter,
   IconLayoutAlignLeft,
   IconLayoutAlignRight,
+  IconRefresh,
   IconTrash,
   IconZoomIn,
 } from "@tabler/icons-react";
@@ -32,6 +33,7 @@ import { useTranslation } from "react-i18next";
 import { getFileUrl } from "@/lib/config.ts";
 import api from "@/lib/api-client.ts";
 import classes from "../common/toolbar-menu.module.css";
+import { XmindImportModal } from "./xmind-import-modal";
 
 const PREVIEW_DEBOUNCE_MS = 2000;
 
@@ -41,6 +43,14 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
   const [plantUmlCode, setPlantUmlCode] = useState("");
   const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Re-import state
+  const [reimportFile, setReimportFile] = useState<File | null>(null);
+  const [reimportModalOpened, { open: openReimport, close: closeReimport }] =
+    useDisclosure(false);
+  const [reimportWarningOpened, { open: openReimportWarning, close: closeReimportWarning }] =
+    useDisclosure(false);
+  const reimportInputRef = useRef<HTMLInputElement | null>(null);
 
   // Preview state
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
@@ -61,6 +71,8 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
         src: attrs?.src || null,
         code: attrs?.code || "",
         attachmentId: attrs?.attachmentId || null,
+        xmindAttachmentId: attrs?.xmindAttachmentId || null,
+        xmindModified: attrs?.xmindModified ?? false,
       };
     },
   });
@@ -172,6 +184,8 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
         title: response.data.title,
         size: response.data.size,
         attachmentId: response.data.attachmentId,
+        // mark as modified if this is an XMind-backed diagram
+        ...(editorState?.xmindAttachmentId ? { xmindModified: true } : {}),
       });
       close();
     } catch (err: any) {
@@ -228,6 +242,30 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
   const handleDelete = useCallback(() => {
     editor.commands.deleteSelection();
   }, [editor]);
+
+  const handleReimportClick = useCallback(() => {
+    if (editorState?.xmindModified) {
+      openReimportWarning();
+    } else {
+      reimportInputRef.current?.click();
+    }
+  }, [editorState?.xmindModified, openReimportWarning]);
+
+  const handleReimportConfirm = useCallback(() => {
+    closeReimportWarning();
+    reimportInputRef.current?.click();
+  }, [closeReimportWarning]);
+
+  const handleReimportFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = "";
+      setReimportFile(file);
+      openReimport();
+    },
+    [openReimport],
+  );
 
   return (
     <>
@@ -290,6 +328,14 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
               <IconEdit size={18} />
             </ActionIcon>
           </Tooltip>
+
+          {editorState?.xmindAttachmentId && (
+            <Tooltip position="top" label={t("Re-import XMind")} withinPortal={false}>
+              <ActionIcon onClick={handleReimportClick} size="lg" variant="subtle">
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
 
           <Tooltip position="top" label={t("Download")} withinPortal={false}>
             <ActionIcon onClick={handleDownload} size="lg" variant="subtle">
@@ -386,6 +432,47 @@ export function PlantUmlMenu({ editor }: EditorMenuProps) {
             </Button>
           </Group>
         </div>
+      </Modal>
+
+      {/* Hidden file input for re-import */}
+      <input
+        ref={reimportInputRef}
+        type="file"
+        accept=".xmind"
+        style={{ display: "none" }}
+        onChange={handleReimportFileChange}
+      />
+
+      {/* Re-import confirmation modal */}
+      <XmindImportModal
+        file={reimportFile}
+        pageId={(editor.storage as any)?.pageId ?? ""}
+        editor={editor}
+        opened={reimportModalOpened}
+        onClose={() => { closeReimport(); setReimportFile(null); }}
+        existingAttachmentId={editorState?.attachmentId}
+      />
+
+      {/* Warning: manual edits will be overwritten */}
+      <Modal
+        opened={reimportWarningOpened}
+        onClose={closeReimportWarning}
+        title={t("You have manually edited this diagram.")}
+        size="sm"
+      >
+        <Text size="sm" mb="md">
+          {t(
+            "Re-importing will overwrite your changes with the content from the new XMind file. The previous version is saved in document history and can be restored.",
+          )}
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={closeReimportWarning}>
+            {t("Cancel")}
+          </Button>
+          <Button color="red" onClick={handleReimportConfirm}>
+            {t("Re-import anyway")}
+          </Button>
+        </Group>
       </Modal>
     </>
   );
