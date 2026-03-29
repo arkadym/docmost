@@ -27,6 +27,12 @@ jobs:
           echo "GITHUB_ENV path: ${GITHUB_ENV}"
           echo "DOCKER_TAGS=${TAGS}" >> "$GITHUB_ENV"
 
+      - name: Sync server version from root package.json
+        run: |
+          VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" apps/server/package.json
+          echo "Server version synced to ${VERSION}"
+
       - name: Install Docker CLI
         run: apk add --no-cache docker-cli
 
