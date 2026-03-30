@@ -26,16 +26,27 @@ via a node attribute so the block can be re-imported later.
 
 ## Toolbar (bubble menu on plantuml node)
 
-Existing plantuml toolbar gains one extra button when `xmindAttachmentId` is set:
+Existing plantuml toolbar gains extra buttons when `xmindAttachmentId` is set:
 
 | Button | Action |
 |---|---|
 | Edit | open split-view PlantUML editor (existing) |
-| **Re-import** | open file picker, upload new `.xmind`, re-run conversion, update node attrs |
 | View | open lightbox (existing) |
+| Align left / center / right | change diagram alignment (existing) |
+| Download SVG | download the rendered SVG (existing) |
+| **Download XMind** *(xmind only)* | download the original `.xmind` attachment |
+| **Re-import** *(xmind only)* | open file picker, upload new `.xmind`, re-run conversion, update node attrs |
 | Delete | remove node (existing) |
 
 Re-import replaces `attrs.src` and `attrs.xmindAttachmentId` in-place, and clears `attrs.xmindModified`.
+
+### Download XMind
+
+When `xmindAttachmentId` is set, a "Download XMind" button appears in the toolbar.
+Clicking it constructs the attachment file URL (`/api/files/{xmindAttachmentId}/{fileName}`)
+and triggers a browser download. The file name is resolved by fetching attachment info
+from the existing `GET /attachments/{id}` endpoint (or derived from the stored attachment
+metadata). No new server endpoint needed.
 No separate version history — document history already covers it.
 
 ### Manual edit warning
