@@ -367,6 +367,7 @@ export const PlantUml = Node.create<PlantUmlOptions>({
 
       if (!editor.isEditable) {
         el.style.cursor = 'zoom-in';
+        dom.style.cursor = 'zoom-in';
       }
 
       return nodeView;

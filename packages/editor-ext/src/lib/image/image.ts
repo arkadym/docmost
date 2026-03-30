@@ -371,6 +371,7 @@ export const TiptapImage = Image.extend<ImageOptions>({
       };
 
       el.style.cursor = "zoom-in";
+      dom.style.cursor = "zoom-in";
       el.addEventListener("click", () => {
         window.dispatchEvent(
           new CustomEvent("open-image-lightbox", {
