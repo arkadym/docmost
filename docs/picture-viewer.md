@@ -6,7 +6,27 @@ Add a fullscreen zoom/pan lightbox for all image-like content in the editor and
 read-only/share views. Users can click any rendered image or diagram to open it
 in a lightbox and explore details that are not visible at document width.
 
-## Affected Nodes
+## Diagram Type Badges
+
+All diagram nodes (`plantuml`, `drawio`, `excalidraw`) display a small 16×16 logo
+badge in the top-right corner of the rendered image to indicate the diagram type:
+
+| Node | Badge file |
+|---|---|
+| `plantuml` (plain) | `/icons/plantuml-logo.svg` |
+| `plantuml` (XMind-backed) | `/icons/xmind-logo.png` |
+| `drawio` | `/icons/drawio-logo.svg` |
+| `excalidraw` | `/icons/excalidraw-logo.png` |
+
+Badges are implemented as absolutely-positioned `<img>` elements (`opacity: 0.75`,
+`pointer-events: none`) appended to the node view container in the native DOM
+node view code (`plantuml.ts`, `drawio.ts`, `excalidraw.ts`). They do not
+interfere with the lightbox click or any other interaction.
+
+Logo files are static assets placed in `apps/client/public/icons/` and served
+verbatim by Vite / the production server at `/icons/<filename>`.
+
+
 
 | TipTap node | View file | Current click behavior |
 |---|---|---|

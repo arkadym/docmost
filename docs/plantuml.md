@@ -2,8 +2,8 @@
 
 ## PlantUML Diagram Support for Docmost
 
-**Version:** 1.0  
-**Date:** 2025-12-15  
+**Version:** 1.1  
+**Date:** 2026-03-30  
 **Status:** Draft  
 **Author:** Development Team
 
@@ -220,9 +220,37 @@ if (attachmentId && codeHash !== previousCodeHash) {
 4.  Attachment is updated with new diagram
 5.  Page history creates new snapshot
 
+#### FR-7: Diagram Type Badge
+
+**Priority:** SHOULD HAVE  
+**Description:** A small logo badge is shown in the top-right corner of every rendered PlantUML diagram to indicate the diagram type at a glance.
+
+**Acceptance Criteria:**
+
+- PlantUML diagrams show `/icons/plantuml-logo.svg` (16×16) badge in top-right corner
+- XMind-backed diagrams (`xmindAttachmentId` set) show `/icons/xmind-logo.png` (16×16) badge instead
+- Badge has `opacity: 0.75` and `pointer-events: none` (does not interfere with click/lightbox)
+- Badge updates automatically if the diagram type changes (e.g. after re-import)
+- Implemented in `plantuml.ts` native DOM node view (not React), so it applies to all rendered diagrams
+
 ---
 
-### 3.2 Non-Functional Requirements
+#### FR-8: Editor Preview Zoom/Pan
+
+**Priority:** SHOULD HAVE  
+**Description:** The preview panel in the PlantUML split-view editor supports zoom and pan.
+
+**Acceptance Criteria:**
+
+- Mouse wheel zooms in/out on the preview image
+- Click-drag pans the preview
+- Toolbar buttons: Zoom In, Zoom Out, Reset (centers image at scale 1)
+- `react-zoom-pan-pinch` (`TransformWrapper` + `TransformComponent`) used for implementation
+- Reset button uses `centerView(1)` — centers and fits image, not top-left reset
+- Shared component `plantuml-edit-modal.tsx` used by both `plantuml-view.tsx` (new nodes) and `plantuml-menu.tsx` (existing nodes)
+
+---
+
 
 #### NFR-1: Performance
 

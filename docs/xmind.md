@@ -129,7 +129,15 @@ xmindModified:    { default: false }   // true after any manual PlantUML edit
 
 Both attributes are stored in ProseMirror JSON as-is, no schema changes needed.
 
-## Out of Scope
+## Diagram Type Badge
+
+When a `plantuml` node has `xmindAttachmentId` set, the top-right corner of the
+rendered diagram shows the XMind logo (`/icons/xmind-logo.png`, 16×16) instead
+of the default PlantUML logo badge. This visually distinguishes XMind mind maps
+from hand-written PlantUML diagrams. The badge updates automatically when a node
+is converted or re-imported.
+
+
 
 - Editing `.xmind` in browser
 - Diff / change summary between versions

@@ -245,6 +245,7 @@ export const PlantUml = Node.create<PlantUmlOptions>({
         const wrapper = document.createElement('div');
         wrapper.appendChild(el);
         applyAlignment(wrapper, node.attrs.align || 'center');
+        applyLogoBadge(wrapper, node.attrs.xmindAttachmentId ?? null);
         return {
           dom: wrapper,
           contentDOM: undefined,
@@ -254,6 +255,7 @@ export const PlantUml = Node.create<PlantUmlOptions>({
               el.src = normalizeFileUrl(updatedNode.attrs.src);
             }
             applyAlignment(wrapper, updatedNode.attrs.align || 'center');
+            applyLogoBadge(wrapper, updatedNode.attrs.xmindAttachmentId ?? null);
             currentNode = updatedNode;
             return true;
           },
@@ -303,6 +305,7 @@ export const PlantUml = Node.create<PlantUmlOptions>({
           const align = updatedNode.attrs.align || 'center';
           const container = nodeView.dom as HTMLElement;
           applyAlignment(container, align);
+          applyLogoBadge(container, updatedNode.attrs.xmindAttachmentId ?? null);
 
           currentNode = updatedNode;
           return true;
@@ -321,6 +324,7 @@ export const PlantUml = Node.create<PlantUmlOptions>({
 
       const dom = nodeView.dom as HTMLElement;
       applyAlignment(dom, node.attrs.align || 'center');
+      applyLogoBadge(dom, node.attrs.xmindAttachmentId ?? null);
 
       // Handle percentage width backward compat
       const widthAttr = node.attrs.width;
@@ -383,5 +387,26 @@ function applyAlignment(container: HTMLElement, align: string) {
   } else {
     container.style.justifyContent = 'center';
   }
+}
+
+function applyLogoBadge(container: HTMLElement, xmindAttachmentId: string | null) {
+  let badge = container.querySelector<HTMLImageElement>('[data-logo-badge]');
+  if (!badge) {
+    badge = document.createElement('img');
+    badge.setAttribute('data-logo-badge', '1');
+    badge.style.position = 'absolute';
+    badge.style.top = '6px';
+    badge.style.right = '6px';
+    badge.style.width = '16px';
+    badge.style.height = '16px';
+    badge.style.opacity = '0.75';
+    badge.style.pointerEvents = 'none';
+    badge.style.borderRadius = '2px';
+    badge.style.zIndex = '2';
+    container.style.position = 'relative';
+    container.appendChild(badge);
+  }
+  badge.src = xmindAttachmentId ? '/icons/xmind-logo.png' : '/icons/plantuml-logo.svg';
+  badge.alt = xmindAttachmentId ? 'XMind' : 'PlantUML';
 }
 
