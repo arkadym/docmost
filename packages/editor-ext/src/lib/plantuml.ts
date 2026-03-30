@@ -125,6 +125,23 @@ export const PlantUml = Node.create<PlantUmlOptions>({
           'data-attachment-id': attributes.attachmentId,
         }),
       },
+      xmindAttachmentId: {
+        default: null,
+        parseHTML: (element) =>
+          element.getAttribute('data-xmind-attachment-id') || null,
+        renderHTML: (attributes) =>
+          attributes.xmindAttachmentId
+            ? { 'data-xmind-attachment-id': attributes.xmindAttachmentId }
+            : {},
+      },
+      xmindModified: {
+        default: false,
+        parseHTML: (element) =>
+          element.getAttribute('data-xmind-modified') === 'true',
+        renderHTML: (attributes) => ({
+          'data-xmind-modified': attributes.xmindModified ? 'true' : undefined,
+        }),
+      },
     };
   },
 

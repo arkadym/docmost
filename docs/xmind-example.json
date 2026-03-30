@@ -1,0 +1,763 @@
+[
+    {
+        "id": "ebebef7b99e921f44873989cf4",
+        "revisionId": "200351eb-be25-4c96-9440-d909eaf6058d",
+        "class": "sheet",
+        "rootTopic": {
+            "id": "edcaffc9a0c893961799db3782",
+            "class": "topic",
+            "title": "Проблемы и решения",
+            "structureClass": "org.xmind.ui.spreadsheet.column",
+            "children": {
+                "attached": [
+                    {
+                        "id": "01a5acb5-fdd5-490f-a505-de0d053541b7",
+                        "title": "Проблемы",
+                        "position": {
+                            "x": 681.2962962962963,
+                            "y": 112.68518518518519
+                        },
+                        "children": {
+                            "attached": [
+                                {
+                                    "id": "0f8e3907-18a1-43b8-b5d1-86768134bba8",
+                                    "title": "Сроки оценки не соответствуют требованиям рынка",
+                                    "position": {
+                                        "x": -455.074074074074,
+                                        "y": 105
+                                    }
+                                },
+                                {
+                                    "id": "91d175f1-4377-47fc-879d-a7ab3ba0e58c",
+                                    "title": "Процент отходов слишком высокий"
+                                },
+                                {
+                                    "id": "c8a7c2e0-5802-4047-a05e-41d3c1095a79",
+                                    "title": "Есть потери за счет отсутствия эффективного мониторинга при переходе изделия между этапами производства и при отгрузке"
+                                },
+                                {
+                                    "id": "39e45436-1918-4f41-97f1-f4a51ec6abbf",
+                                    "title": "Нет общего пространства для работы  над проектами/задачами"
+                                },
+                                {
+                                    "id": "f957c03a-028d-495d-83f1-49236895d295",
+                                    "title": "Нет современных средств коммуникации: чаты, оповещения на смартфон, приложения для смартфона"
+                                },
+                                {
+                                    "id": "1d972f12-43aa-46e9-bb5c-8197e7424914",
+                                    "title": "Много рутинных процессов, выполняемых \"вручную\""
+                                },
+                                {
+                                    "id": "88211470-6038-4294-b976-4d4a2a839079",
+                                    "title": "Обмен документами в бумажном виде"
+                                },
+                                {
+                                    "id": "f9b1f783-8f90-4fc6-818b-2ee961a396ca",
+                                    "title": "Не всегда есть цифровой след выполнения задачи"
+                                },
+                                {
+                                    "id": "87f62f9b-5e45-410f-836f-7ee7d2348b32",
+                                    "title": "Нет базы занинй"
+                                },
+                                {
+                                    "id": "24ed27ee-1fc9-42a1-8a38-363ed3f5f7d4",
+                                    "title": "Нет базы справочной информации"
+                                },
+                                {
+                                    "id": "6d64f300-7943-499e-ac04-daf867e47d59",
+                                    "title": "Нет общедоступной базы данных по выполненным проектам"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "2c1f856b-b0e5-4116-9bf2-9eb29c32ddf4",
+                        "title": "Решения",
+                        "position": {
+                            "x": -312.07407407407413,
+                            "y": -233.29629629629625
+                        },
+                        "children": {
+                            "attached": [
+                                {
+                                    "id": "e8697e8633bbad4cab3fca451f",
+                                    "title": "Единое экосистема для работы, интегрированная с 1С и базами данных",
+                                    "position": {
+                                        "x": -84,
+                                        "y": -157
+                                    },
+                                    "children": {
+                                        "attached": [
+                                            {
+                                                "id": "12ff0a1f-b89d-483e-b1e3-c02ba11b7e68",
+                                                "title": "Корпортал, объединяющий сервисы по автоматизации БП",
+                                                "children": {
+                                                    "attached": [
+                                                        {
+                                                            "id": "4f465336-a11f-4d5f-a9d6-63038d4b83a1",
+                                                            "title": "Единое пространство, коммуникация, уведомления, напоминания, календарь, визуализация прогресса выполнения, автоматизация БП, планерки и совещания, проекты, задачи, чаты, база знаний, лента событий, сотрудники, подразделения, контакты"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "id": "15a3d42b-c534-47e7-8f4e-a5cc495090ca",
+                                                "title": "Мобильная версия корпортала",
+                                                "children": {
+                                                    "attached": [
+                                                        {
+                                                            "id": "f749ce1a-9d16-4e0c-8c83-478e16cc3dee",
+                                                            "title": "Пуш-уведомления о задачах, событиях календаря, напоминания, возможность отвечать в мессенджер, почту, комментировать задачи и документы и прочее"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": "f4593c80b45b25aa0652a9095e",
+                                    "title": "Автоматизация производственных процессов",
+                                    "position": {
+                                        "x": -381,
+                                        "y": 47
+                                    },
+                                    "children": {
+                                        "attached": [
+                                            {
+                                                "id": "5c81a0b3-e9a3-4a29-85a8-3e06374fb948",
+                                                "title": "Процесс отслеживания отгрузочных марок на всех этапах производства"
+                                            },
+                                            {
+                                                "id": "21160b95-cd87-4723-88bc-1a217e15bdb3",
+                                                "title": "Процесс извлечения минимального и достаточного количества данных для построения каркаса 3D модели в Текла"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": "c609e2edf5188d42b24a28bdad",
+                                    "title": "Автоматизация бизнес-процессов",
+                                    "position": {
+                                        "x": -286.5,
+                                        "y": 109
+                                    },
+                                    "children": {
+                                        "attached": [
+                                            {
+                                                "id": "ee3687a5-7e51-4cf8-84f4-661d798dfd74",
+                                                "title": "Процесс калькуляции стоимости проектов"
+                                            },
+                                            {
+                                                "id": "337ff1f3-2990-434b-b4a8-5ed01d67481a",
+                                                "title": "Процесс взаимодействия с заказчиком"
+                                            },
+                                            {
+                                                "id": "879d1af3-34ea-4a11-9cf0-375f9ac6b54d",
+                                                "title": "Тендеры"
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "title": "Проблемы-Решения",
+        "topicOverlapping": "overlap",
+        "extensions": [
+            {
+                "provider": "org.xmind.ui.skeleton.structure.style",
+                "content": {
+                    "centralTopic": "org.xmind.ui.spreadsheet.column",
+                    "mainTopic": "org.xmind.ui.logic.right",
+                    "floatingTopic": "org.xmind.ui.logic.right"
+                }
+            }
+        ],
+        "theme": {
+            "map": {
+                "id": "d02ba7d7-3775-4da7-ab0c-184c6f77dcbc",
+                "properties": {
+                    "svg:fill": "#ffffff",
+                    "multi-line-colors": "#fa8155 #ffad36 #b7c82b #0098b9 #7574bc #a165a8",
+                    "color-list": "#000229 #1F2766 #52CC83 #4D86DB #99142F #245570",
+                    "line-tapered": "none"
+                }
+            },
+            "centralTopic": {
+                "id": "7c470fd5-0196-4aca-ab7c-0b4866cbb22b",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "24pt",
+                    "fo:font-weight": "600",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#1F2766",
+                    "fill-pattern": "solid",
+                    "line-width": "2pt",
+                    "line-color": "#1F2766",
+                    "line-pattern": "solid",
+                    "border-line-color": "inherited",
+                    "border-line-width": "inherited",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.curve",
+                    "arrow-end-class": "org.xmind.arrowShape.none",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "mainTopic": {
+                "id": "7728160d-5b76-4de6-a9cf-80e692b1b3aa",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "18pt",
+                    "fo:font-weight": "500",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "left",
+                    "svg:fill": "inherited",
+                    "fill-pattern": "solid",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "inherited",
+                    "border-line-width": "0pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.curve",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "subTopic": {
+                "id": "e6333d7f-e97f-464a-851d-2fe352fc107a",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "left",
+                    "svg:fill": "inherited",
+                    "fill-pattern": "none",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "inherited",
+                    "border-line-width": "0pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.roundedElbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "floatingTopic": {
+                "id": "6eee1da9-58ad-4c7d-8335-a1eebcb3812e",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#EEEBEE",
+                    "fill-pattern": "solid",
+                    "line-width": "2pt",
+                    "line-color": "inherited",
+                    "line-pattern": "solid",
+                    "border-line-color": "#EEEBEE",
+                    "border-line-width": "0pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.roundedElbow",
+                    "arrow-end-class": "org.xmind.arrowShape.none",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "summaryTopic": {
+                "id": "3d13bf5a-c5b3-4ab4-ae4f-973cf911e511",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#1F2766",
+                    "fill-pattern": "none",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "#1F2766",
+                    "border-line-width": "inherited",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.roundedElbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "calloutTopic": {
+                "id": "656732b1-0560-44bd-a4b0-510a961a503d",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "left",
+                    "svg:fill": "#1F2766",
+                    "fill-pattern": "solid",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "#1F2766",
+                    "border-line-width": "inherited",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.roundedElbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "importantTopic": {
+                "id": "10de1d7b-4543-45ce-8ba8-369261cacc6c",
+                "properties": {
+                    "fo:font-weight": "bold",
+                    "svg:fill": "#661F27",
+                    "fill-pattern": "solid",
+                    "border-line-color": "#661F27",
+                    "border-line-width": "0"
+                }
+            },
+            "minorTopic": {
+                "id": "b68ceb2f-1270-467f-826c-d80d26e30baf",
+                "properties": {
+                    "fo:font-weight": "bold",
+                    "svg:fill": "#27661F",
+                    "fill-pattern": "solid",
+                    "border-line-color": "#27661F",
+                    "border-line-width": "0"
+                }
+            },
+            "expiredTopic": {
+                "id": "27863c0b-143a-4fde-abca-1a6f6048657a",
+                "properties": {
+                    "fo:text-decoration": "line-through",
+                    "fill-pattern": "none"
+                }
+            },
+            "boundary": {
+                "id": "e64ef336-0738-4fbf-8f54-5727a6b64044",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#1F2766",
+                    "fill-pattern": "solid",
+                    "line-width": "2",
+                    "line-color": "#1F2766",
+                    "line-pattern": "dash",
+                    "shape-class": "org.xmind.boundaryShape.roundedRect"
+                }
+            },
+            "summary": {
+                "id": "0843a866-04ee-4f52-8379-0a6ba9f7187c",
+                "properties": {
+                    "line-width": "2pt",
+                    "line-color": "#1F2766",
+                    "line-pattern": "solid",
+                    "shape-class": "org.xmind.summaryShape.square"
+                }
+            },
+            "relationship": {
+                "id": "6f9709aa-60b3-42f5-8eb0-9dae2550c693",
+                "properties": {
+                    "fo:font-family": "NeverMind",
+                    "fo:font-size": "13pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "line-width": "2",
+                    "line-color": "#1F2766",
+                    "line-pattern": "dash",
+                    "shape-class": "org.xmind.relationshipShape.curved",
+                    "arrow-begin-class": "org.xmind.arrowShape.dot",
+                    "arrow-end-class": "org.xmind.arrowShape.triangle"
+                }
+            },
+            "skeletonThemeId": "69a9222aa3cb5e4fb218190de7",
+            "colorThemeId": "Rainbow-#1F2766-MULTI_LINE_COLORS"
+        }
+    },
+    {
+        "id": "28b1d3ce-46c4-4a0a-95f7-7c200065ad85",
+        "revisionId": "f49e057d-a3dc-497a-842b-0790146b0a20",
+        "class": "sheet",
+        "rootTopic": {
+            "id": "b98244d0-e363-4613-97c0-f75a792454b8",
+            "class": "topic",
+            "title": "Старт",
+            "structureClass": "org.xmind.ui.timeline.horizontal",
+            "children": {
+                "attached": [
+                    {
+                        "id": "ca4ad4f6-306b-428c-a50c-43364a7ba4d2",
+                        "title": "Первый этап (1-3 месяц)",
+                        "children": {
+                            "attached": [
+                                {
+                                    "id": "ed891d16-f57d-4e8a-bcb6-329cfd735824",
+                                    "title": "Внедрение корпортала Битрикс24"
+                                },
+                                {
+                                    "id": "930a314f-12f4-4b80-a3e7-3be87fbfde23",
+                                    "title": "Настройка рабочего окружения для ведения проектов, задач и коммуникаций по ним"
+                                },
+                                {
+                                    "id": "7e508ad2-55ad-42e4-88aa-a2f7b8588e96",
+                                    "title": "Проектирование архитектуры информационной системы на базе корпортала и справочной БД, позволяющей дописывать любые БП и модули (сервисы) для поэтапной автоматизации управления предприятием"
+                                },
+                                {
+                                    "id": "0c0d0b6a-1fb5-415e-81dd-7d95731170e7",
+                                    "title": "Разработка нейросетевой модели для разметки КМ - выделение областей с текстом, графикой и таблицами"
+                                },
+                                {
+                                    "id": "739641ef-b45c-4734-8f22-823b80310749",
+                                    "title": "Разработка интерфейса Сервиса Оценка проекта"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "43042561-3ff0-489e-9f5c-962903470d32",
+                        "title": "Второй этап (3-6 месяцев)",
+                        "children": {
+                            "attached": [
+                                {
+                                    "id": "2e296e5c-cfdd-418d-9d64-72180eb40d5a",
+                                    "title": "Разработка Сервиса Оценка проекта"
+                                },
+                                {
+                                    "id": "11b1ed9a-13dc-4fb6-a228-88ed8763d30d",
+                                    "title": "Разработка и обучение нейросетевой модели для разбора табличных и текстовых составляющих КМ"
+                                },
+                                {
+                                    "id": "2e75f960-3e5e-433a-89db-b4f15b47a609",
+                                    "title": "Создание справочной БД"
+                                },
+                                {
+                                    "id": "85f3d2d7-1897-458d-af36-274b97e04fa1",
+                                    "title": "Оцифровка исторических данных для БД и обучение ИИ "
+                                },
+                                {
+                                    "id": "675909c6-8532-4952-81e1-4dfbe1b41de9",
+                                    "title": "Разработка интеграции с 1С ERP"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "ba29b98e-2ae7-4467-a506-2c5e5d67b2ba",
+                        "title": "Третий этап (3-6 месяцев)",
+                        "children": {
+                            "attached": [
+                                {
+                                    "id": "38a37c8d-72db-4bfb-a3c3-a3af13f4e9ec",
+                                    "title": "Разработка модуля оптимизации раскроя"
+                                },
+                                {
+                                    "id": "50f22c65-5736-4c7c-9991-aa51d45c731f",
+                                    "title": "Разработка и обучение нейросетевой модели для разбора графической части КМ"
+                                },
+                                {
+                                    "id": "0e0be28e-d5bc-43d9-87ef-5471a669543a",
+                                    "title": "Разработка системы отслеживание отгрузочных марок на всех этапах производства"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "style": {
+                "id": "ffb259cf-0056-4298-85bd-b1c7dfb561d3",
+                "properties": {
+                    "svg:fill": "#303E9FFF"
+                }
+            }
+        },
+        "title": "Стратегия",
+        "topicOverlapping": "overlap",
+        "extensions": [
+            {
+                "provider": "org.xmind.ui.skeleton.structure.style",
+                "content": {
+                    "centralTopic": "org.xmind.ui.timeline.horizontal",
+                    "floatingTopic": "org.xmind.ui.logic.right"
+                }
+            }
+        ],
+        "theme": {
+            "map": {
+                "id": "8b663a0c-2c9f-4234-83cd-7cdba1a816d7",
+                "properties": {
+                    "svg:fill": "#ffffff",
+                    "multi-line-colors": "#F9423A #F6A04D #F3D321 #00BC7B #486AFF #4D49BE",
+                    "color-list": "#000229 #1F2766 #52CC83 #4D86DB #99142F #245570",
+                    "line-tapered": "normal"
+                }
+            },
+            "centralTopic": {
+                "id": "77479b14-222e-4cbe-87eb-20155df23f89",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "28pt",
+                    "fo:font-weight": "700",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#000229",
+                    "fill-pattern": "solid",
+                    "line-width": "3pt",
+                    "line-color": "#000229",
+                    "line-pattern": "solid",
+                    "border-line-color": "inherited",
+                    "border-line-width": "3pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.roundedElbow",
+                    "arrow-end-class": "org.xmind.arrowShape.none",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "mainTopic": {
+                "id": "5829ad00-314e-4416-a033-f0f05c46ed81",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "18pt",
+                    "fo:font-weight": "500",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "left",
+                    "svg:fill": "inherited",
+                    "fill-pattern": "none",
+                    "line-width": "2",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "inherited",
+                    "border-line-width": "3",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.elbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "subTopic": {
+                "id": "25e0591d-f221-41dd-b391-a7d6bf2f392c",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "500",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "left",
+                    "svg:fill": "inherited",
+                    "fill-pattern": "none",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "inherited",
+                    "border-line-width": "0pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.elbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "floatingTopic": {
+                "id": "89381584-8d0e-4e07-80d3-79ceeadd6204",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "500",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#EEEBEE",
+                    "fill-pattern": "solid",
+                    "line-width": "2pt",
+                    "line-color": "inherited",
+                    "line-pattern": "solid",
+                    "border-line-color": "#EEEBEE",
+                    "border-line-width": "0pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.elbow",
+                    "arrow-end-class": "org.xmind.arrowShape.none",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "summaryTopic": {
+                "id": "4c822164-5998-40a2-8260-4ae056d917a8",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "14pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#000229",
+                    "fill-pattern": "solid",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "#000229",
+                    "border-line-width": "0pt",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.elbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "calloutTopic": {
+                "id": "760e4f1f-f51f-4678-9070-7bb3b56756d0",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "13pt",
+                    "fo:font-weight": "700",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "left",
+                    "svg:fill": "#000229",
+                    "fill-pattern": "solid",
+                    "line-width": "inherited",
+                    "line-color": "inherited",
+                    "line-pattern": "inherited",
+                    "border-line-color": "#000229",
+                    "border-line-width": "inherited",
+                    "border-line-pattern": "inherited",
+                    "shape-class": "org.xmind.topicShape.roundedRect",
+                    "line-class": "org.xmind.branchConnection.roundedElbow",
+                    "arrow-end-class": "inherited",
+                    "alignment-by-level": "inherited"
+                }
+            },
+            "importantTopic": {
+                "id": "05a6321a-7060-4e27-865d-dcb1568cf7b7",
+                "properties": {
+                    "fo:font-weight": "bold",
+                    "svg:fill": "#460400",
+                    "fill-pattern": "solid",
+                    "border-line-color": "#460400",
+                    "border-line-width": "0"
+                }
+            },
+            "minorTopic": {
+                "id": "2e98cc2e-9cb5-4448-abe3-3d97cbba1700",
+                "properties": {
+                    "fo:font-weight": "bold",
+                    "svg:fill": "#703D00",
+                    "fill-pattern": "solid",
+                    "border-line-color": "#703D00",
+                    "border-line-width": "0"
+                }
+            },
+            "expiredTopic": {
+                "id": "95bd7a32-1d64-4840-8b70-d7a1afb21995",
+                "properties": {
+                    "fo:text-decoration": "line-through",
+                    "fill-pattern": "none"
+                }
+            },
+            "boundary": {
+                "id": "ce22ced2-c267-4d0b-b76c-37f6603c0116",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "13pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "svg:fill": "#000229",
+                    "fill-pattern": "solid",
+                    "line-width": "2",
+                    "line-color": "#000229",
+                    "line-pattern": "dash",
+                    "shape-class": "org.xmind.boundaryShape.roundedRect"
+                }
+            },
+            "summary": {
+                "id": "2881cd29-8fa3-4d66-b8cc-deec700f6b86",
+                "properties": {
+                    "line-width": "2pt",
+                    "line-color": "#000229",
+                    "line-pattern": "solid",
+                    "shape-class": "org.xmind.summaryShape.straight"
+                }
+            },
+            "relationship": {
+                "id": "79bb252f-dcc4-462d-bdde-21bdb9f7dd08",
+                "properties": {
+                    "fo:font-family": "Roboto",
+                    "fo:font-size": "13pt",
+                    "fo:font-weight": "400",
+                    "fo:font-style": "normal",
+                    "fo:color": "inherited",
+                    "fo:text-transform": "manual",
+                    "fo:text-decoration": "none",
+                    "fo:text-align": "center",
+                    "line-width": "2",
+                    "line-color": "#000229",
+                    "line-pattern": "dash",
+                    "shape-class": "org.xmind.relationshipShape.curved",
+                    "arrow-begin-class": "org.xmind.arrowShape.none",
+                    "arrow-end-class": "org.xmind.arrowShape.triangle"
+                }
+            },
+            "skeletonThemeId": "2f0afb8d995a55939d8ff954ea",
+            "colorThemeId": "Rainbow-#000229-MULTI_LINE_COLORS"
+        }
+    }
+]

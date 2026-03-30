@@ -14,6 +14,8 @@ import { AttachmentType } from '../attachment/attachment.constants';
 import { v7 as uuid7 } from 'uuid';
 import { KyselyDB } from '@docmost/db/types/kysely.types';
 import { InjectKysely } from 'nestjs-kysely';
+import * as JSZip from 'jszip';
+import { convertXMindToPlantUml, parseXMindJson, parseXMindStyles } from './xmind-converter';
 
 @Injectable()
 export class DiagramsService {
@@ -99,6 +101,31 @@ export class DiagramsService {
       fileSize: svgBuffer.length,
       updatedAt: new Date(),
     };
+  }
+
+  async convertXMind(fileBuffer: Buffer): Promise<string> {
+    let zip: JSZip;
+    try {
+      zip = await JSZip.loadAsync(fileBuffer);
+    } catch (e: any) {
+      throw new BadRequestException(`Invalid .xmind file: ${e.message}`);
+    }
+
+    const contentFile = zip.file('content.json');
+    if (!contentFile) {
+      throw new BadRequestException(
+        'content.json not found in .xmind archive',
+      );
+    }
+
+    const raw = await contentFile.async('string');
+
+    const stylesFile = zip.file('styles.json');
+    const stylesRaw = stylesFile ? await stylesFile.async('string') : null;
+    const stylesData = stylesRaw ? parseXMindStyles(stylesRaw) : { stylesMap: new Map() };
+
+    const sheets = parseXMindJson(raw);
+    return convertXMindToPlantUml(sheets, stylesData);
   }
 
   private async callPlantUmlServer(code: string): Promise<Buffer> {

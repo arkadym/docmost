@@ -6,7 +6,9 @@ import {
   HttpStatus,
   NotFoundException,
   Post,
+  Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { DiagramsService } from './diagrams.service';
 import { RenderPlantUmlDto } from './dto/render-plantuml.dto';
@@ -20,6 +22,7 @@ import {
   SpaceCaslAction,
   SpaceCaslSubject,
 } from '../casl/interfaces/space-ability.type';
+import { FileInterceptor } from '../../common/interceptors/file.interceptor';
 
 @Controller('diagrams')
 @UseGuards(JwtAuthGuard)
@@ -63,5 +66,22 @@ export class DiagramsController {
       size: attachment.fileSize,
       updatedAt: attachment.updatedAt,
     };
+  }
+
+  @Post('xmind/convert')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor)
+  async convertXMind(@Req() req: any) {
+    const file = await req.file({
+      limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+    });
+
+    if (!file) {
+      throw new NotFoundException('No file uploaded');
+    }
+
+    const buffer = await file.toBuffer();
+    const plantumlCode = await this.diagramsService.convertXMind(buffer);
+    return { plantumlCode };
   }
 }
