@@ -243,6 +243,11 @@ export function convertXMindToPlantUml(
   for (const sheet of sheets) {
     const sheetTheme = sheet.theme;
     const lines: string[] = ['@startmindmap'];
+    lines.push('<style>');
+    lines.push('node {');
+    lines.push('    MaximumWidth 250');
+    lines.push('}');
+    lines.push('</style>');
 
     const root = sheet.rootTopic;
 
