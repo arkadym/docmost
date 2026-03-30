@@ -15,7 +15,7 @@ function getDefaultTemplate(): string {
 export default function PlantUmlView(props: NodeViewProps) {
   const { t } = useTranslation();
   const { node, updateAttributes, editor, selected } = props;
-  const { code, src, title, width, align, attachmentId } = node.attrs;
+  const { code, src, title, width, align, attachmentId, xmindAttachmentId } = node.attrs;
 
   const alignClass = useMemo(() => {
     if (align === "left") return "alignLeft";
@@ -53,13 +53,27 @@ export default function PlantUmlView(props: NodeViewProps) {
             selected && "ProseMirror-selectednode",
             alignClass,
           )}
-          style={{ width }}
+          style={{ width, position: "relative", display: "inline-block" }}
         >
           <Image
             radius="md"
             fit="contain"
             src={getFileUrl(src)}
             alt={title}
+          />
+          <img
+            src={xmindAttachmentId ? "/icons/xmind-logo.png" : "/icons/plantuml-logo.svg"}
+            width={16}
+            height={16}
+            alt={xmindAttachmentId ? "XMind" : "PlantUML"}
+            style={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              opacity: 0.75,
+              pointerEvents: "none",
+              borderRadius: 2,
+            }}
           />
         </div>
       ) : (
