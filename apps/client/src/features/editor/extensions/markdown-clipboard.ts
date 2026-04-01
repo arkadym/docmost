@@ -1,4 +1,5 @@
 // adapted from: https://github.com/aguingand/tiptap-markdown/blob/main/src/extensions/tiptap/clipboard.js - MIT
+import * as Y from "yjs";
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { DOMParser } from "@tiptap/pm/model";
@@ -42,7 +43,17 @@ export const MarkdownClipboard = Extension.create({
               const { from, to } = view.state.selection;
               const properties = parseYamlFrontmatter(frontmatter.yaml);
               if (properties.length > 0) {
-                this.editor.commands.insertPageProperties(properties);
+                const collabExt = this.editor.extensionManager.extensions.find(
+                  (e) => e.name === "collaboration",
+                );
+                const ydoc = (collabExt as any)?.options?.document as
+                  | Y.Doc
+                  | undefined;
+                if (ydoc) {
+                  ydoc.transact(() => {
+                    ydoc.getMap("properties").set("data", properties);
+                  });
+                }
               }
               const bodyHtml = markdownToHtml(frontmatter.body);
               if (frontmatter.body.trim()) {

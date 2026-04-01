@@ -92,8 +92,8 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const docxFileRef = useRef<() => void>(null);
   const notionFileRef = useRef<() => void>(null);
   const confluenceFileRef = useRef<() => void>(null);
-  const zipFileRef = useRef<() => void>(null);
   const joplinFileRef = useRef<() => void>(null);
+  const zipFileRef = useRef<() => void>(null);
 
   const canUseConfluence = useHasFeature(Feature.CONFLUENCE_IMPORT);
   const canUseDocx = useHasFeature(Feature.DOCX_IMPORT);
@@ -419,6 +419,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
             </Tooltip>
           )}
         </FileButton>
+
         <FileButton
           onChange={(file) => handleZipUpload(file, "joplin")}
           accept="application/zip"
@@ -431,7 +432,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
               leftSection={<IconFileTypeZip size={18} />}
               {...props}
             >
-              OneNote Joplin HTML
+              OneNote / Joplin HTML
             </Button>
           )}
         </FileButton>

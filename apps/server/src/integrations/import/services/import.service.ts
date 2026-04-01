@@ -69,6 +69,7 @@ export class ImportService {
     const fileContent = fileBuffer.toString();
 
     let prosemirrorState = null;
+    let importedProperties: any[] = [];
     let createdPage = null;
     let frontmatterDates: { createdAt?: Date; updatedAt?: Date } = {};
     let titleOverride: string | undefined;
@@ -78,7 +79,9 @@ export class ImportService {
 
     try {
       if (fileExtension.endsWith('.md')) {
-        prosemirrorState = await this.processMarkdown(fileContent);
+        const mdResult = await this.processMarkdown(fileContent);
+        prosemirrorState = mdResult.pmDoc;
+        importedProperties = mdResult.properties;
         const fm = extractFrontmatter(fileContent);
         if (fm) {
           frontmatterDates = extractDatesFromProperties(
@@ -90,6 +93,7 @@ export class ImportService {
         const htmlBody = fm ? fm.body : fileContent;
         if (fm) {
           const props = parseYamlFrontmatter(fm.yaml);
+          importedProperties = props;
           const fmTitleProp = props.find(
             (p) => p.key.toLowerCase() === 'title',
           );
@@ -146,7 +150,7 @@ export class ImportService {
           title: pageTitle,
           content: prosemirrorJson,
           textContent: jsonToText(prosemirrorJson),
-          ydoc: await this.createYdoc(prosemirrorJson),
+          ydoc: await this.createYdoc(prosemirrorJson, importedProperties),
           position: pagePosition,
           spaceId: spaceId,
           creatorId: userId,
@@ -173,23 +177,19 @@ export class ImportService {
     return createdPage;
   }
 
-  async processMarkdown(markdownInput: string): Promise<any> {
+  async processMarkdown(
+    markdownInput: string,
+  ): Promise<{ pmDoc: any; properties: any[] }> {
     try {
       const frontmatter = extractFrontmatter(markdownInput);
       if (frontmatter) {
         const html = await markdownToHtml(frontmatter.body);
         const pmDoc = await this.processHTML(html);
         const properties = parseYamlFrontmatter(frontmatter.yaml);
-        if (properties.length > 0 && pmDoc?.content) {
-          pmDoc.content.unshift({
-            type: 'pageProperties',
-            attrs: { properties },
-          });
-        }
-        return pmDoc;
+        return { pmDoc, properties };
       }
       const html = await markdownToHtml(markdownInput);
-      return this.processHTML(html);
+      return { pmDoc: await this.processHTML(html), properties: [] };
     } catch (err) {
       throw err;
     }
@@ -264,9 +264,12 @@ export class ImportService {
     return this.processHTML(html);
   }
 
-  async createYdoc(prosemirrorJson: any): Promise<Buffer | null> {
+  async createYdoc(
+    prosemirrorJson: any,
+    properties: any[] = [],
+  ): Promise<Buffer | null> {
     if (prosemirrorJson) {
-      // this.logger.debug(`Converting prosemirror json state to ydoc`);
+      // this.logger.debug(`Converting prosemirror json state to ydoc`)
 
       const ydoc = TiptapTransformer.toYdoc(
         prosemirrorJson,
@@ -274,7 +277,11 @@ export class ImportService {
         tiptapExtensions,
       );
 
-      Y.encodeStateAsUpdate(ydoc);
+      if (properties.length > 0) {
+        ydoc.transact(() => {
+          ydoc.getMap('properties').set('data', properties);
+        });
+      }
 
       return Buffer.from(Y.encodeStateAsUpdate(ydoc));
     }

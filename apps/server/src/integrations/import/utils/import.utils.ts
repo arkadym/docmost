@@ -189,7 +189,7 @@ const MONTH_MAP: Record<string, number> = {
   // Polish
   'stycznia': 1, 'lutego': 2, 'marca': 3, 'kwietnia': 4, 'maja': 5, 'czerwca': 6,
   'lipca': 7, 'sierpnia': 8, 'września': 9, 'października': 10, 'listopada': 11, 'grudnia': 12,
-  // Korean (월 = month suffix, stripping it below)
+  // Korean (월 = month suffix)
   '1월': 1, '2월': 2, '3월': 3, '4월': 4, '5월': 5, '6월': 6,
   '7월': 7, '8월': 8, '9월': 9, '10월': 10, '11월': 11, '12월': 12,
   // Japanese (月 suffix)
@@ -233,7 +233,7 @@ export function parseJoplinBodyDate(
     }
   }
 
-  // Pattern 3: numeric  dd.mm.yyyy or mm/dd/yyyy or yyyy-mm-dd
+  // Pattern 3: numeric  dd.mm.yyyy or yyyy-mm-dd
   if (!month) {
     const p3a = dt.match(/^(\d{1,2})[\.](\d{1,2})[\.](\d{4})/);
     if (p3a) {

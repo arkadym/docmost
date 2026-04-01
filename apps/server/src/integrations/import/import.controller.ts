@@ -163,7 +163,7 @@ export class ImportController {
     const validZipSources = ['generic', 'notion', 'confluence', 'joplin'];
     if (!validZipSources.includes(source)) {
       throw new BadRequestException(
-        'Invalid import source. Import source must either be generic, notion or confluence.',
+        'Invalid import source. Import source must either be generic, notion, confluence or joplin.',
       );
     }
 

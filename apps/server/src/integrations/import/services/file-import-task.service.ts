@@ -550,12 +550,13 @@ export class FileImportTaskService {
               await this.importService.processHTML(html),
             );
 
-            // Prepend pageProperties node if frontmatter was extracted
+            let importedProperties: any[] = [];
             if (page['_frontmatterYaml']) {
-              let properties = parseYamlFrontmatter(page['_frontmatterYaml']);
-              // When bodyDate is available (parsed from HTML body div), clean up
-              // Joplin's inaccurate timestamps: drop 'updated'/'modified' and
-              // replace 'created'/'date' with the real date extracted from the body.
+              let properties =
+                parseYamlFrontmatter(page['_frontmatterYaml']) ?? [];
+              // When bodyDate is available (parsed from the OneNote title div),
+              // clean up Joplin's inaccurate timestamps: drop 'updated'/'modified'
+              // and replace 'created'/'date' with the real date from the body.
               if (isJoplin && page['_bodyDate']) {
                 const bd = page['_bodyDate'] as Date;
                 properties = properties.filter(
@@ -570,12 +571,7 @@ export class FileImportTaskService {
                 );
                 if (createdProp) createdProp.value = bd.toISOString();
               }
-              if (properties.length > 0 && pmState?.content) {
-                pmState.content.unshift({
-                  type: 'pageProperties',
-                  attrs: { properties },
-                });
-              }
+              importedProperties = properties;
               const fmDates = extractDatesFromProperties(properties);
               if (fmDates.createdAt || fmDates.updatedAt) {
                 page['_dates'] = fmDates;
@@ -598,7 +594,7 @@ export class FileImportTaskService {
             const fmTitle = page['_fmTitle'] as string | undefined;
             const titleOverride = selectLongerTitle(bodyTitle, fmTitle);
             // Body date (from OneNote title div) takes priority over frontmatter dates
-            // (which are Joplin processing timestamps, not original note dates)
+            // (which are Joplin processing timestamps, not the original note dates)
             const bodyDate = page['_bodyDate'] as Date | undefined;
             const fmDates = page['_dates'] as
               | { createdAt?: Date; updatedAt?: Date }
@@ -614,7 +610,10 @@ export class FileImportTaskService {
               icon: page.icon || pageIcon || null,
               content: prosemirrorJson,
               textContent: jsonToText(prosemirrorJson),
-              ydoc: await this.importService.createYdoc(prosemirrorJson),
+              ydoc: await this.importService.createYdoc(
+                prosemirrorJson,
+                importedProperties,
+              ),
               position: page.position!,
               spaceId: fileTask.spaceId,
               workspaceId: fileTask.workspaceId,
