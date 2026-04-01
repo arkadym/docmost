@@ -29,8 +29,10 @@ import {
   buildAttachmentCandidates,
   collectMarkdownAndHtmlFiles,
   encodeFilePath,
+  extractDatesFromProperties,
   extractNotionPartialId,
   readDocmostMetadata,
+  selectLongerTitle,
   stripNotionID,
 } from '../utils/import.utils';
 import { executeTx } from '@docmost/db/utils';
@@ -111,7 +113,8 @@ export class FileImportTaskService {
     try {
       if (
         fileTask.source === FileImportSource.Generic ||
-        fileTask.source === FileImportSource.Notion
+        fileTask.source === FileImportSource.Notion ||
+        fileTask.source === FileImportSource.Joplin
       ) {
         await this.processGenericImport({
           extractDir: tmpExtractDir,
@@ -166,6 +169,7 @@ export class FileImportTaskService {
   }): Promise<void> {
     const { extractDir, fileTask } = opts;
     const isNotion = fileTask.source === FileImportSource.Notion;
+    const isJoplin = fileTask.source === FileImportSource.Joplin;
     const allFiles = await collectMarkdownAndHtmlFiles(extractDir);
     const attachmentCandidates = await buildAttachmentCandidates(extractDir);
     const docmostMetadata = await readDocmostMetadata(extractDir);
@@ -497,6 +501,21 @@ export class FileImportTaskService {
                 } else {
                   content = await markdownToHtml(content);
                 }
+              } else if (page.fileExtension.toLowerCase() === '.html') {
+                const fm = extractFrontmatter(content);
+                const htmlBody = fm ? fm.body : content;
+                if (isJoplin) {
+                  if (fm) {
+                    page['_frontmatterYaml'] = fm.yaml;
+                  }
+                  const { cleanHtml, bodyTitle, bodyDate } =
+                    this.importService.processJoplinHtml(htmlBody);
+                  if (bodyTitle) page['_joplinBodyTitle'] = bodyTitle;
+                  if (bodyDate) page['_bodyDate'] = bodyDate;
+                  content = cleanHtml;
+                } else {
+                  content = htmlBody;
+                }
               }
             } catch (err: any) {
               if (err?.code === 'ENOENT') {
@@ -531,14 +550,39 @@ export class FileImportTaskService {
               await this.importService.processHTML(html),
             );
 
-            // Prepend pageProperties node if frontmatter was extracted
+            let importedProperties: any[] = [];
             if (page['_frontmatterYaml']) {
-              const properties = parseYamlFrontmatter(page['_frontmatterYaml']);
-              if (properties.length > 0 && pmState?.content) {
-                pmState.content.unshift({
-                  type: 'pageProperties',
-                  attrs: { properties },
-                });
+              let properties =
+                parseYamlFrontmatter(page['_frontmatterYaml']) ?? [];
+              // When bodyDate is available (parsed from the OneNote title div),
+              // clean up Joplin's inaccurate timestamps: drop 'updated'/'modified'
+              // and replace 'created'/'date' with the real date from the body.
+              if (isJoplin && page['_bodyDate']) {
+                const bd = page['_bodyDate'] as Date;
+                properties = properties.filter(
+                  (p) =>
+                    p.key.toLowerCase() !== 'updated' &&
+                    p.key.toLowerCase() !== 'modified',
+                );
+                const createdProp = properties.find(
+                  (p) =>
+                    p.key.toLowerCase() === 'created' ||
+                    p.key.toLowerCase() === 'date',
+                );
+                if (createdProp) createdProp.value = bd.toISOString();
+              }
+              importedProperties = properties;
+              const fmDates = extractDatesFromProperties(properties);
+              if (fmDates.createdAt || fmDates.updatedAt) {
+                page['_dates'] = fmDates;
+              }
+              const fmTitleProp = properties.find(
+                (p) => p.key.toLowerCase() === 'title',
+              );
+              if (fmTitleProp) {
+                page['_fmTitle'] = Array.isArray(fmTitleProp.value)
+                  ? fmTitleProp.value[0]
+                  : fmTitleProp.value;
               }
               delete page['_frontmatterYaml'];
             }
@@ -546,20 +590,42 @@ export class FileImportTaskService {
             const { title, prosemirrorJson } =
               this.importService.extractTitleAndRemoveHeading(pmState);
 
+            const bodyTitle = page['_joplinBodyTitle'] as string | undefined;
+            const fmTitle = page['_fmTitle'] as string | undefined;
+            const titleOverride = selectLongerTitle(bodyTitle, fmTitle);
+            // Body date (from OneNote title div) takes priority over frontmatter dates
+            // (which are Joplin processing timestamps, not the original note dates)
+            const bodyDate = page['_bodyDate'] as Date | undefined;
+            const fmDates = page['_dates'] as
+              | { createdAt?: Date; updatedAt?: Date }
+              | undefined;
+            const pageDates: { createdAt?: Date; updatedAt?: Date } = bodyDate
+              ? { createdAt: bodyDate }
+              : (fmDates ?? {});
+
             const insertablePage: InsertablePage = {
               id: page.id,
               slugId: page.slugId,
-              title: title || page.name,
+              title: title || titleOverride || page.name,
               icon: page.icon || pageIcon || null,
               content: prosemirrorJson,
               textContent: jsonToText(prosemirrorJson),
-              ydoc: await this.importService.createYdoc(prosemirrorJson),
+              ydoc: await this.importService.createYdoc(
+                prosemirrorJson,
+                importedProperties,
+              ),
               position: page.position!,
               spaceId: fileTask.spaceId,
               workspaceId: fileTask.workspaceId,
               creatorId: fileTask.creatorId,
               lastUpdatedById: fileTask.creatorId,
               parentPageId: page.parentPageId,
+              ...(pageDates?.createdAt
+                ? { createdAt: pageDates.createdAt }
+                : {}),
+              ...(pageDates?.updatedAt
+                ? { updatedAt: pageDates.updatedAt }
+                : {}),
             };
 
             await trx.insertInto('pages').values(insertablePage).execute();

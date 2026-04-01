@@ -73,12 +73,14 @@ interface PageEditorProps {
   pageId: string;
   editable: boolean;
   content: any;
+  onYdocReady?: (ydoc: Y.Doc | null) => void;
 }
 
 export default function PageEditor({
   pageId,
   editable,
   content,
+  onYdocReady,
 }: PageEditorProps) {
   const collaborationURL = useCollaborationUrl();
   const isComponentMounted = useRef(false);
@@ -164,12 +166,14 @@ export default function PageEditor({
 
       local.on("synced", onLocalSyncedHandler);
       providersRef.current = { socket, local, remote };
+      onYdocReady?.(ydoc);
       setProvidersReady(true);
     } else {
       setProvidersReady(true);
     }
     // Only destroy on final unmount
     return () => {
+      onYdocReady?.(null);
       providersRef.current?.socket.destroy();
       providersRef.current?.remote.destroy();
       providersRef.current?.local.destroy();

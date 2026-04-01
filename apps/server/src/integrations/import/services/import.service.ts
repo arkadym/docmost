@@ -23,6 +23,12 @@ import {
   extractFrontmatter,
   parseYamlFrontmatter,
 } from '@docmost/editor-ext';
+import { load } from 'cheerio';
+import {
+  extractDatesFromProperties,
+  parseJoplinBodyDate,
+  selectLongerTitle,
+} from '../utils/import.utils';
 import {
   FileTaskStatus,
   FileTaskType,
@@ -63,16 +69,51 @@ export class ImportService {
     const fileContent = fileBuffer.toString();
 
     let prosemirrorState = null;
+    let importedProperties: any[] = [];
     let createdPage = null;
+    let frontmatterDates: { createdAt?: Date; updatedAt?: Date } = {};
+    let titleOverride: string | undefined;
 
     // For DOCX, we need the page ID upfront so images can reference it
     const pageId = fileExtension === '.docx' ? uuid7() : undefined;
 
     try {
       if (fileExtension.endsWith('.md')) {
-        prosemirrorState = await this.processMarkdown(fileContent);
+        const mdResult = await this.processMarkdown(fileContent);
+        prosemirrorState = mdResult.pmDoc;
+        importedProperties = mdResult.properties;
+        const fm = extractFrontmatter(fileContent);
+        if (fm) {
+          frontmatterDates = extractDatesFromProperties(
+            parseYamlFrontmatter(fm.yaml),
+          );
+        }
       } else if (fileExtension.endsWith('.html')) {
-        prosemirrorState = await this.processHTML(fileContent);
+        const fm = extractFrontmatter(fileContent);
+        const htmlBody = fm ? fm.body : fileContent;
+        if (fm) {
+          const props = parseYamlFrontmatter(fm.yaml);
+          importedProperties = props;
+          const fmTitleProp = props.find(
+            (p) => p.key.toLowerCase() === 'title',
+          );
+          const fmTitle = fmTitleProp
+            ? Array.isArray(fmTitleProp.value)
+              ? fmTitleProp.value[0]
+              : fmTitleProp.value
+            : undefined;
+          const { cleanHtml, bodyTitle, bodyDate } =
+            this.processJoplinHtml(htmlBody);
+          titleOverride = selectLongerTitle(bodyTitle, fmTitle);
+          if (bodyDate) frontmatterDates = { createdAt: bodyDate };
+          prosemirrorState = await this.processHTML(cleanHtml);
+        } else {
+          const { cleanHtml, bodyTitle, bodyDate } =
+            this.processJoplinHtml(fileContent);
+          titleOverride = bodyTitle;
+          if (bodyDate) frontmatterDates = { createdAt: bodyDate };
+          prosemirrorState = await this.processHTML(cleanHtml);
+        }
       } else if (fileExtension.endsWith('.docx')) {
         prosemirrorState = await this.processDocx(
           fileBuffer,
@@ -97,7 +138,7 @@ export class ImportService {
     const { title, prosemirrorJson } =
       this.extractTitleAndRemoveHeading(prosemirrorState);
 
-    const pageTitle = title || fileName;
+    const pageTitle = title || titleOverride || fileName;
 
     if (prosemirrorJson) {
       try {
@@ -109,12 +150,18 @@ export class ImportService {
           title: pageTitle,
           content: prosemirrorJson,
           textContent: jsonToText(prosemirrorJson),
-          ydoc: await this.createYdoc(prosemirrorJson),
+          ydoc: await this.createYdoc(prosemirrorJson, importedProperties),
           position: pagePosition,
           spaceId: spaceId,
           creatorId: userId,
           workspaceId: workspaceId,
           lastUpdatedById: userId,
+          ...(frontmatterDates.createdAt
+            ? { createdAt: frontmatterDates.createdAt }
+            : {}),
+          ...(frontmatterDates.updatedAt
+            ? { updatedAt: frontmatterDates.updatedAt }
+            : {}),
         });
 
         this.logger.debug(
@@ -130,23 +177,19 @@ export class ImportService {
     return createdPage;
   }
 
-  async processMarkdown(markdownInput: string): Promise<any> {
+  async processMarkdown(
+    markdownInput: string,
+  ): Promise<{ pmDoc: any; properties: any[] }> {
     try {
       const frontmatter = extractFrontmatter(markdownInput);
       if (frontmatter) {
         const html = await markdownToHtml(frontmatter.body);
         const pmDoc = await this.processHTML(html);
         const properties = parseYamlFrontmatter(frontmatter.yaml);
-        if (properties.length > 0 && pmDoc?.content) {
-          pmDoc.content.unshift({
-            type: 'pageProperties',
-            attrs: { properties },
-          });
-        }
-        return pmDoc;
+        return { pmDoc, properties };
       }
       const html = await markdownToHtml(markdownInput);
-      return this.processHTML(html);
+      return { pmDoc: await this.processHTML(html), properties: [] };
     } catch (err) {
       throw err;
     }
@@ -158,6 +201,31 @@ export class ImportService {
     } catch (err) {
       throw err;
     }
+  }
+
+  processJoplinHtml(html: string): {
+    cleanHtml: string;
+    bodyTitle: string | undefined;
+    bodyDate: Date | undefined;
+  } {
+    const $ = load(html);
+    const titleDiv = $('body > div.title').first();
+    let bodyTitle: string | undefined;
+    let bodyDate: Date | undefined;
+    if (titleDiv.length) {
+      const containers = titleDiv.find('.container-outline');
+      const text = containers.first().find('span').first().text().trim();
+      if (text) bodyTitle = text;
+      // Second container has date (index 0) and time (index 1) outline-elements
+      if (containers.length >= 2) {
+        const dateSpans = containers.eq(1).find('.outline-element span');
+        const dateText = dateSpans.eq(0).text().trim();
+        const timeText = dateSpans.eq(1).text().trim();
+        bodyDate = parseJoplinBodyDate(dateText, timeText);
+      }
+      titleDiv.remove();
+    }
+    return { cleanHtml: $.html(), bodyTitle, bodyDate };
   }
 
   async processDocx(
@@ -196,9 +264,12 @@ export class ImportService {
     return this.processHTML(html);
   }
 
-  async createYdoc(prosemirrorJson: any): Promise<Buffer | null> {
+  async createYdoc(
+    prosemirrorJson: any,
+    properties: any[] = [],
+  ): Promise<Buffer | null> {
     if (prosemirrorJson) {
-      // this.logger.debug(`Converting prosemirror json state to ydoc`);
+      // this.logger.debug(`Converting prosemirror json state to ydoc`)
 
       const ydoc = TiptapTransformer.toYdoc(
         prosemirrorJson,
@@ -206,7 +277,11 @@ export class ImportService {
         tiptapExtensions,
       );
 
-      Y.encodeStateAsUpdate(ydoc);
+      if (properties.length > 0) {
+        ydoc.transact(() => {
+          ydoc.getMap('properties').set('data', properties);
+        });
+      }
 
       return Buffer.from(Y.encodeStateAsUpdate(ydoc));
     }

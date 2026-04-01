@@ -92,6 +92,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const docxFileRef = useRef<() => void>(null);
   const notionFileRef = useRef<() => void>(null);
   const confluenceFileRef = useRef<() => void>(null);
+  const joplinFileRef = useRef<() => void>(null);
   const zipFileRef = useRef<() => void>(null);
 
   const canUseConfluence = useHasFeature(Feature.CONFLUENCE_IMPORT);
@@ -145,6 +146,8 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
         notionFileRef.current();
       } else if (source === "confluence" && confluenceFileRef.current) {
         confluenceFileRef.current();
+      } else if (source === "joplin" && joplinFileRef.current) {
+        joplinFileRef.current();
       } else if (source === "generic" && zipFileRef.current) {
         zipFileRef.current();
       }
@@ -414,6 +417,23 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
                 Confluence
               </Button>
             </Tooltip>
+          )}
+        </FileButton>
+
+        <FileButton
+          onChange={(file) => handleZipUpload(file, "joplin")}
+          accept="application/zip"
+          resetRef={joplinFileRef}
+        >
+          {(props) => (
+            <Button
+              justify="start"
+              variant="default"
+              leftSection={<IconFileTypeZip size={18} />}
+              {...props}
+            >
+              OneNote / Joplin HTML
+            </Button>
           )}
         </FileButton>
       </SimpleGrid>

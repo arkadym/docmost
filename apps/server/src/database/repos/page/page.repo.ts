@@ -430,7 +430,7 @@ export class PageRepo {
 
   async getPageAndDescendants(
     parentPageId: string,
-    opts: { includeContent: boolean },
+    opts: { includeContent: boolean; includeYdoc?: boolean },
   ) {
     return this.db
       .withRecursive('page_hierarchy', (db) =>
@@ -449,6 +449,7 @@ export class PageRepo {
             'updatedAt',
           ])
           .$if(opts?.includeContent, (qb) => qb.select('content'))
+          .$if(opts?.includeYdoc, (qb) => qb.select('ydoc'))
           .where('id', '=', parentPageId)
           .where('deletedAt', 'is', null)
           .unionAll((exp) =>
@@ -467,6 +468,7 @@ export class PageRepo {
                 'p.updatedAt',
               ])
               .$if(opts?.includeContent, (qb) => qb.select('p.content'))
+              .$if(opts?.includeYdoc, (qb) => qb.select('p.ydoc'))
               .innerJoin('page_hierarchy as ph', 'p.parentPageId', 'ph.id')
               .where('p.deletedAt', 'is', null),
           ),

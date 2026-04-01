@@ -38,6 +38,7 @@ import {
   getProsemirrorContent,
 } from '../../common/helpers/prosemirror/utils';
 import { htmlToMarkdown, stringifyYamlFrontmatter } from '@docmost/editor-ext';
+import * as Y from 'yjs';
 
 @Injectable()
 export class ExportService {
@@ -73,15 +74,33 @@ export class ExportService {
       prosemirrorJson = getProsemirrorContent(page.content);
     }
 
-    // Extract pageProperties node (always first) before adding title
+    // Extract properties: prefer Y.Map in ydoc (new format), fall back to pageProperties node (legacy)
     let frontmatter = '';
     const content: any[] = prosemirrorJson.content ?? [];
+
+    const ydocBuffer = (page as any).ydoc as Buffer | null | undefined;
+    if (ydocBuffer) {
+      try {
+        const ydoc = new Y.Doc();
+        Y.applyUpdate(ydoc, new Uint8Array(ydocBuffer));
+        const properties = ydoc.getMap('properties').get('data') as any[] | undefined;
+        if (Array.isArray(properties) && properties.length > 0) {
+          frontmatter = stringifyYamlFrontmatter(properties);
+        }
+      } catch {
+        // fall through to legacy check
+      }
+    }
+
+    // Legacy: pageProperties ProseMirror node (remove it so it doesn't render in HTML)
     const propIndex = content.findIndex((n: any) => n.type === 'pageProperties');
     if (propIndex !== -1) {
       const [propNode] = content.splice(propIndex, 1);
-      const properties = propNode?.attrs?.properties;
-      if (Array.isArray(properties) && properties.length > 0) {
-        frontmatter = stringifyYamlFrontmatter(properties);
+      if (!frontmatter) {
+        const properties = propNode?.attrs?.properties;
+        if (Array.isArray(properties) && properties.length > 0) {
+          frontmatter = stringifyYamlFrontmatter(properties);
+        }
       }
     }
 
@@ -127,11 +146,13 @@ export class ExportService {
       //@ts-ignore
       pages = await this.pageRepo.getPageAndDescendants(pageId, {
         includeContent: true,
+        includeYdoc: true,
       });
     } else {
       // Only fetch the single page when includeChildren is false
       const page = await this.pageRepo.findById(pageId, {
         includeContent: true,
+        includeYdoc: true,
       });
       if (page) {
         pages = [page];
@@ -212,6 +233,7 @@ export class ExportService {
         'pages.icon',
         'pages.position',
         'pages.content',
+        'pages.ydoc',
         'pages.parentPageId',
         'pages.spaceId',
         'pages.workspaceId',

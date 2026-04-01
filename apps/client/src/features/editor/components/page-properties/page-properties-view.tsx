@@ -106,7 +106,12 @@ export default function PagePropertiesView(props: NodeViewProps) {
   };
 
   const deleteProperty = (index: number) => {
-    setProperties(properties.filter((_, i) => i !== index));
+    const next = properties.filter((_, i) => i !== index);
+    if (next.length === 0) {
+      editor.commands.deletePageProperties();
+    } else {
+      setProperties(next);
+    }
   };
 
   const addProperty = () => {
