@@ -488,6 +488,7 @@ export class ImportService {
     spaceId: string,
     workspaceId: string,
     overwrite = false,
+    skipRoot = true,
   ) {
     const file = await filePromise;
     const fileExtension = path.extname(file.filename).toLowerCase();
@@ -527,6 +528,7 @@ export class ImportService {
     await this.fileTaskQueue.add(QueueJob.IMPORT_TASK, {
       fileTaskId: fileTaskId,
       overwrite,
+      skipRoot,
     });
 
     return fileTask;

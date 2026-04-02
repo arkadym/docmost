@@ -24,6 +24,7 @@ export class FileTaskProcessor extends WorkerHost implements OnModuleDestroy {
           await this.fileTaskService.processZIpImport(
             job.data.fileTaskId,
             job.data.overwrite ?? false,
+            job.data.skipRoot ?? true,
           );
           break;
         case QueueJob.EXPORT_TASK:

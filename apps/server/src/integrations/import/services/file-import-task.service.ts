@@ -67,7 +67,7 @@ export class FileImportTaskService {
     @Inject(AUDIT_SERVICE) private readonly auditService: IAuditService,
   ) {}
 
-  async processZIpImport(fileTaskId: string, overwrite = false): Promise<void> {
+  async processZIpImport(fileTaskId: string, overwrite = false, skipRoot = true): Promise<void> {
     const fileTask = await this.db
       .selectFrom('fileTasks')
       .selectAll()
@@ -122,6 +122,7 @@ export class FileImportTaskService {
           extractDir: tmpExtractDir,
           fileTask,
           overwrite,
+          skipRoot,
         });
       }
 
@@ -170,8 +171,9 @@ export class FileImportTaskService {
     extractDir: string;
     fileTask: FileTask;
     overwrite?: boolean;
+    skipRoot?: boolean;
   }): Promise<void> {
-    const { extractDir, fileTask, overwrite = false } = opts;
+    const { extractDir, fileTask, overwrite = false, skipRoot = true } = opts;
     const isNotion = fileTask.source === FileImportSource.Notion;
     const isJoplin = fileTask.source === FileImportSource.Joplin;
     const allFiles = await collectMarkdownAndHtmlFiles(extractDir);
@@ -223,6 +225,24 @@ export class FileImportTaskService {
       }
     });
 
+    // Determine if there's a single root container folder to optionally skip
+    let skipRootFolder: string | null = null;
+    if (skipRoot) {
+      const rootLevelItems = new Set<string>();
+      pagesMap.forEach((page) => {
+        rootLevelItems.add(page.filePath.split('/')[0]);
+      });
+      if (rootLevelItems.size === 1) {
+        const onlyRoot = Array.from(rootLevelItems)[0];
+        const hasRootFiles = Array.from(pagesMap.keys()).some(
+          (fp) => !fp.includes('/'),
+        );
+        if (!hasRootFiles) {
+          skipRootFolder = onlyRoot;
+        }
+      }
+    }
+
     // For each folder with content, create a placeholder page if no corresponding .md or .html exists
     // Process folders with partial UUIDs first so they claim their specific files
     // before plain folders (without partial UUIDs) take whatever remains.
@@ -235,6 +255,13 @@ export class FileImportTaskService {
       : [...foldersWithContent];
 
     sortedFolders.forEach((folderPath) => {
+      if (
+        skipRootFolder &&
+        folderPath.toLowerCase() === skipRootFolder.toLowerCase()
+      ) {
+        return;
+      }
+
       const mdPath = `${folderPath}.md`;
       const htmlPath = `${folderPath}.html`;
 

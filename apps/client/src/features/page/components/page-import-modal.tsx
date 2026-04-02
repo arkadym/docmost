@@ -1,10 +1,12 @@
 import {
   Modal,
   Button,
-  Checkbox,
+  Divider,
   SimpleGrid,
   FileButton,
   Group,
+  Stack,
+  Switch,
   Text,
   Tooltip,
 } from "@mantine/core";
@@ -87,6 +89,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const [treeData, setTreeData] = useAtom(treeDataAtom);
   const [fileTaskId, setFileTaskId] = useState<string | null>(null);
   const [overwrite, setOverwrite] = useState(false);
+  const [skipRoot, setSkipRoot] = useState(true);
   const emit = useQueryEmit();
 
   const markdownFileRef = useRef<() => void>(null);
@@ -129,7 +132,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
         autoClose: false,
       });
 
-      const importTask = await importZip(selectedFile, spaceId, source, overwrite);
+      const importTask = await importZip(selectedFile, spaceId, source, overwrite, skipRoot);
       notifications.update({
         id: "import",
         title: t("Importing pages"),
@@ -332,6 +335,19 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   // @ts-ignore
   return (
     <>
+      <Stack gap="xs" mb="sm">
+        <Switch
+          label={t("Skip root folder")}
+          checked={skipRoot}
+          onChange={(e) => setSkipRoot(e.currentTarget.checked)}
+        />
+        <Switch
+          label={t("Overwrite existing pages")}
+          checked={overwrite}
+          onChange={(e) => setOverwrite(e.currentTarget.checked)}
+        />
+      </Stack>
+      <Divider mb="sm" />
       <SimpleGrid cols={2}>
         <FileButton onChange={handleFileUpload} accept=".md" multiple resetRef={markdownFileRef}>
           {(props) => (
@@ -471,14 +487,6 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
             )}
           </FileButton>
         </div>
-      </Group>
-
-      <Group justify="center" mt="xs">
-        <Checkbox
-          label={t("Overwrite existing pages with matching title")}
-          checked={overwrite}
-          onChange={(e) => setOverwrite(e.currentTarget.checked)}
-        />
       </Group>
     </>
   );

@@ -138,7 +138,7 @@ export class ImportController {
     let file = null;
     try {
       file = await req.file({
-        limits: { fileSize: maxFileSize, fields: 4, files: 1 },
+        limits: { fileSize: maxFileSize, fields: 5, files: 1 },
       });
     } catch (err: any) {
       this.logger.error(err.message);
@@ -162,6 +162,7 @@ export class ImportController {
     const spaceId = file.fields?.spaceId?.value;
     const source = file.fields?.source?.value;
     const overwrite = file.fields?.overwrite?.value === 'true';
+    const skipRoot = file.fields?.skipRoot?.value !== 'false';
 
     const validZipSources = ['generic', 'notion', 'confluence', 'joplin'];
     if (!validZipSources.includes(source)) {
@@ -198,6 +199,7 @@ export class ImportController {
       spaceId,
       workspace.id,
       overwrite,
+      skipRoot,
     );
   }
 }
