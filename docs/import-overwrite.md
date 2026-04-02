@@ -135,10 +135,137 @@ processGenericImport({ extractDir, fileTask, overwrite, skipRoot })
   → overwrite=true → findByTitleInSpace() before insert
 ```
 
+---
+
+## Feature 3 — Skip Unchanged Pages on Overwrite
+
+### Motivation
+
+When re-importing a vault on top of existing notes, the majority of pages have not changed — they differ from the DB copy only in trailing newlines or extra blank lines. Writing identical content to the DB wastes I/O, creates useless history entries, and resets `updatedAt` on untouched pages.
+
+### Behaviour
+
+When `overwrite=true` and a title match is found, **before** writing anything, compare the incoming text content against the stored `textContent`:
+
+1. Normalize both sides: collapse all whitespace characters (`\s+` → `''`)
+2. If equal → skip the update entirely; just remap `pageIdRemap` and `validPageIds` so child pages still resolve their `parentPageId` correctly
+3. If different → proceed with the existing history-save + ydoc-replace + `updateTable` write
+
+This comparison is free — `incoming textContent = jsonToText(prosemirrorJson)` is already computed; `existing.textContent` is already fetched by `findByTitleInSpace`.
+
+### Status column in summary
+
+The skip-unchanged logic feeds directly into Feature 4: a skipped page gets status `unchanged`.
+
+### Files to Change (Feature 3)
+
+| File | What changes |
+|------|-------------|
+| `apps/server/src/integrations/import/services/file-import-task.service.ts` | Inside the `if (existing)` overwrite block: normalize + compare text; on match set status `unchanged` and `continue`; on mismatch proceed as before |
+
+---
+
+## Feature 4 — Import Summary Report
+
+### Motivation
+
+After a large import (hundreds of notes) users need an audit trail: what was created, what was updated, what was already up to date. A Docmost page in the space is more convenient than a log file.
+
+### Behaviour
+
+- **Toggle**: `Create summary` — on the import modal, off by default; ZIP imports only (Markdown zip, HTML zip, Joplin zip, OneNote-via-Joplin)
+- **Every run creates a fresh page** — no overwrite of previous summaries
+- **Page location**: space root (no parent)
+- **Page title**: `<zip-filename-without-ext> import summary`
+
+### Summary Page Structure
+
+Status uses emoji dots (standard markdown has no color support; emoji renders universally):
+- 🟢 created
+- 🟡 updated
+- ⚪ unchanged
+
+```markdown
+# <zip filename without extension> import summary
+
+Imported: 2026-04-02 14:35:22
+
+Total processed: 142 | Created: 38 | Updated: 12 | Unchanged: 92
+
+| File | Status |
+|------|--------|
+| Actonica LLC/HR/Вакансия.md | 🟢 created |
+| Actonica LLC/Projects/Alpha.md | 🟡 updated |
+| Actonica LLC/Projects/Beta.md | ⚪ unchanged |
+| … | … |
+```
+
+The heading is an H1 so the import pipeline extracts it as the page title.
+
+### Data Collection
+
+A `SummaryEntry` is accumulated during the existing per-page loop — no extra DB queries:
+
+```typescript
+type ImportStatus = 'created' | 'updated' | 'unchanged';
+interface SummaryEntry { filePath: string; status: ImportStatus; }
+const summaryEntries: SummaryEntry[] = [];
+```
+
+| Event | Status recorded |
+|-------|----------------|
+| `overwrite=true`, title match, content identical | `unchanged` |
+| `overwrite=true`, title match, content different | `updated` |
+| No match (new insert) | `created` |
+| Always (even when `overwrite=false`) | `created` |
+
+### Summary Page Insert
+
+After the main transaction commits successfully, if `createSummary=true`:
+
+1. Build the markdown string (heading + totals paragraph + pipe table)
+2. `markdownToHtml()` → `processHTML()` → `getProsemirrorContent()` → `createYdoc()`
+3. Insert a new page via `trx.insertInto('pages')` at space root with a fresh UUID/slugId; use the import run timestamp as `createdAt`/`updatedAt`; `parentPageId = null`
+
+The summary insert runs in its own small transaction **outside** the main import transaction — failure to create the summary does not roll back the imported pages.
+
+### Data Flow
+
+```
+FormData: createSummary="true"
+  ↓
+Controller → importZip(... createSummary)
+  ↓
+Queue job payload: { fileTaskId, overwrite, skipRoot, createSummary }
+  ↓
+Processor → processZIpImport(fileTaskId, overwrite, skipRoot, createSummary)
+  ↓
+processGenericImport({ ..., createSummary })
+  → accumulates summaryEntries[] during main loop
+  → after main tx: inserts summary page if createSummary=true
+```
+
+### UI
+
+Same Switch style as `overwrite` / `skipRoot`. Label: `"Create import summary"`. Position: third switch in the stack, below `Overwrite existing pages`.
+
+### Files to Change (Feature 4)
+
+| File | What changes |
+|------|-------------|
+| `apps/client/src/features/page/components/page-import-modal.tsx` | Add third `Switch` for `createSummary` (default `false`) |
+| `apps/client/src/features/page/services/page-service.ts` | Add `createSummary?: boolean` param; append to `FormData` |
+| `apps/server/src/integrations/import/import.controller.ts` | Read `createSummary` field; pass to service |
+| `apps/server/src/integrations/import/services/import.service.ts` | `importZip()`: accept + pass `createSummary` via queue job payload |
+| `apps/server/src/integrations/import/processors/file-task.processor.ts` | Pass `job.data.createSummary` to `processZIpImport()` |
+| `apps/server/src/integrations/import/services/file-import-task.service.ts` | `processZIpImport()`: accept `createSummary`; pass to `processGenericImport()`; accumulate `summaryEntries[]`; build + insert summary page after main tx |
+
+---
+
 ## Notes
 
-- Page history entries are created automatically by Hocuspocus whenever a document is opened after ydoc binary changes — no manual snapshot call needed.
-- No schema/migration changes required for either feature.
-- Neither `overwrite` nor `skipRoot` need to be persisted on `fileTask` for v1.
-- `skipRoot` only affects ZIP imports; single-file import ignores it.
+- No schema/migration changes required for any feature.
+- `overwrite`, `skipRoot`, and `createSummary` do not need to be persisted on `fileTask`.
+- `skipRoot` and `createSummary` only affect ZIP imports; single-file import ignores both.
+- The content-comparison normalization (`\s+` → `''`) intentionally ignores all whitespace differences, including punctuation-adjacent spaces. This is intentional — the goal is to detect truly new content, not minor formatting tweaks.
 
