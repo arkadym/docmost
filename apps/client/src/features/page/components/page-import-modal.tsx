@@ -335,19 +335,25 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   // @ts-ignore
   return (
     <>
-      <Stack gap="xs" mb="sm">
+      <Stack gap={0} mb="md">
         <Switch
           label={t("Skip root folder")}
+          labelPosition="left"
           checked={skipRoot}
           onChange={(e) => setSkipRoot(e.currentTarget.checked)}
+          styles={{ body: { width: "100%", justifyContent: "space-between" } }}
+          py="sm"
         />
         <Switch
           label={t("Overwrite existing pages")}
+          labelPosition="left"
           checked={overwrite}
           onChange={(e) => setOverwrite(e.currentTarget.checked)}
+          styles={{ body: { width: "100%", justifyContent: "space-between" } }}
+          py="sm"
         />
       </Stack>
-      <Divider mb="sm" />
+      <Divider mb="md" />
       <SimpleGrid cols={2}>
         <FileButton onChange={handleFileUpload} accept=".md" multiple resetRef={markdownFileRef}>
           {(props) => (
