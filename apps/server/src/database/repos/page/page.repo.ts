@@ -140,6 +140,7 @@ export class PageRepo {
     return dbOrTx(this.db, trx)
       .selectFrom('pages')
       .select(this.baseFields)
+      .select(['content', 'ydoc'])
       .where(sql`lower(title)`, '=', title.toLowerCase().trim())
       .where('spaceId', '=', spaceId)
       .where(

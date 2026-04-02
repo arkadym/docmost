@@ -424,6 +424,63 @@ export class ImportService {
     return null;
   }
 
+  /**
+   * Replace a page's ydoc content while preserving Yjs CRDT history.
+   * By recording delete ops before inserting new content, connected clients
+   * receive a proper replacement (delete old + insert new) rather than a merge
+   * that would duplicate content.
+   */
+  replaceYdocContent(
+    existingYdocBuffer: Buffer | null | undefined,
+    prosemirrorJson: any,
+    properties: any[],
+  ): Buffer | null {
+    if (!prosemirrorJson) return null;
+
+    const newYdoc = TiptapTransformer.toYdoc(
+      prosemirrorJson,
+      'default',
+      tiptapExtensions,
+    );
+
+    if (!existingYdocBuffer) {
+      // No existing ydoc: use a fresh ydoc and just add properties
+      if (properties.length > 0) {
+        newYdoc.transact(() => {
+          newYdoc.getMap('properties').set('data', properties);
+        });
+      }
+      return Buffer.from(Y.encodeStateAsUpdate(newYdoc));
+    }
+
+    // Load the existing ydoc to maintain CRDT history
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, new Uint8Array(existingYdocBuffer));
+
+    // Delete all existing content (records tombstones so clients see the deletion)
+    const defaultFragment = doc.getXmlFragment('default');
+    if (defaultFragment.length > 0) {
+      doc.transact(() => {
+        defaultFragment.delete(0, defaultFragment.length);
+      });
+    }
+
+    // Merge new content into the existing ydoc
+    Y.applyUpdate(doc, Y.encodeStateAsUpdate(newYdoc));
+
+    // Replace properties
+    doc.transact(() => {
+      const propsMap = doc.getMap('properties');
+      if (properties.length > 0) {
+        propsMap.set('data', properties);
+      } else if (propsMap.has('data')) {
+        propsMap.delete('data');
+      }
+    });
+
+    return Buffer.from(Y.encodeStateAsUpdate(doc));
+  }
+
   extractTitleAndRemoveHeading(prosemirrorState: any) {
     let title: string | null = null;
 
@@ -435,6 +492,12 @@ export class ImportService {
       content[0].attrs?.level === 1
     ) {
       title = content[0].content?.[0]?.text ?? null;
+      content.shift();
+    }
+
+    // Strip a horizontal rule that immediately follows the heading.
+    // Obsidian notes commonly have '---' right after '# Title' as a visual separator.
+    if (content.length > 0 && content[0].type === 'horizontalRule') {
       content.shift();
     }
 

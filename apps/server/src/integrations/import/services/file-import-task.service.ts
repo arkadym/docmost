@@ -38,6 +38,7 @@ import {
 import { executeTx } from '@docmost/db/utils';
 import { BacklinkRepo } from '@docmost/db/repos/backlink/backlink.repo';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
+import { PageHistoryRepo } from '@docmost/db/repos/page/page-history.repo';
 import { ImportAttachmentService } from './import-attachment.service';
 import { ModuleRef } from '@nestjs/core';
 import { PageService } from '../../../core/page/services/page.service';
@@ -60,6 +61,7 @@ export class FileImportTaskService {
     private readonly pageService: PageService,
     private readonly backlinkRepo: BacklinkRepo,
     private readonly pageRepo: PageRepo,
+    private readonly pageHistoryRepo: PageHistoryRepo,
     @InjectKysely() private readonly db: KyselyDB,
     private readonly importAttachmentService: ImportAttachmentService,
     private moduleRef: ModuleRef,
@@ -662,13 +664,26 @@ export class FileImportTaskService {
                 trx,
               );
               if (existing) {
+                // Save current page state as history before overwriting
+                if (existing.content) {
+                  await this.pageHistoryRepo.saveHistory(existing, { trx });
+                }
+
+                // Build a ydoc that properly replaces content while preserving
+                // Yjs CRDT history (delete old + insert new) to avoid duplication
+                const overwriteYdoc = this.importService.replaceYdocContent(
+                  existing.ydoc as Buffer | null | undefined,
+                  prosemirrorJson,
+                  importedProperties,
+                );
+
                 await trx
                   .updateTable('pages')
                   .set({
                     title: pageTitle,
                     content: prosemirrorJson,
                     textContent: jsonToText(prosemirrorJson),
-                    ydoc,
+                    ydoc: overwriteYdoc,
                     lastUpdatedById: fileTask.creatorId,
                     updatedAt: new Date(),
                     ...(pageDates?.updatedAt
