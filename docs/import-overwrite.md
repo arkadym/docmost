@@ -63,13 +63,53 @@ Currently the server only handles this header for **Joplin HTML** exports (via `
 
 ---
 
-## Feature 2 — Overwrite Existing Pages on Import
+## Feature 2 — Import Options UI
 
-Add an **"Overwrite existing pages"** option to the import flow (single-file and ZIP). When enabled, if an imported page title matches an existing page in the same space (and same parent for ZIP imports), the existing page content is updated instead of creating a duplicate.
+Two options are exposed in the import modal. They live **above** the import buttons, separated from them by a horizontal divider line (matching the Export page modal design — Mantine `Switch` / toggle style, not checkboxes).
 
-The option is **opt-in** (checkbox, off by default).
+```
+┌─────────────────────────────────────────┐
+│  Skip root folder             [●──]  ON │
+│  Overwrite existing pages    [──●]  OFF │
+├─────────────────────────────────────────┤
+│  [Markdown] [HTML] [DOCX] …             │
+│                                         │
+│  Import zip file  [Upload file]         │
+└─────────────────────────────────────────┘
+```
 
-### Matching Strategy
+### Skip Root Folder (on by default)
+
+When a zip contains all content under a single top-level directory (e.g. `Actonica LLC/`), this option controls whether that folder itself becomes a page:
+
+- **ON** — root folder is skipped; its children are imported at space root (previous implicit behaviour)
+- **OFF** — root folder is created as a page and children are nested under it
+
+The server-side `skipRootFolder` detection already exists in `processGenericImport()`. It needs to be wired to a flag that travels the same path as `overwrite` (FormData → controller → service → queue job → processor → `processGenericImport(opts)`).
+
+### Overwrite Existing Pages (off by default)
+
+When enabled, a page whose title matches an existing page in the same space and same parent is **updated** instead of creating a duplicate. See matching strategy and data flow below.
+
+### UI Design Rules
+
+- Use Mantine `Switch` component (not `Checkbox`) — matches the export modal style
+- Both switches sit in a `Stack` at the **top** of the modal content, before the `SimpleGrid` of buttons
+- A Mantine `Divider` separates the switches from the buttons
+- Labels: `"Skip root folder"` / `"Overwrite existing pages"`
+
+### Files to Change (Feature 2)
+
+| File | What changes |
+|------|-------------|
+| `apps/client/src/features/page/components/page-import-modal.tsx` | Replace `Checkbox` with two `Switch` controls for `skipRoot` (default `true`) and `overwrite` (default `false`); add `Divider`; move both above the buttons grid |
+| `apps/client/src/features/page/services/page-service.ts` | Add `overwrite?: boolean` and `skipRoot?: boolean` params; append both to `FormData` |
+| `apps/server/src/integrations/import/import.controller.ts` | Bump `fields` limit; read `overwrite` and `skipRoot` fields; pass both to service |
+| `apps/server/src/integrations/import/services/import.service.ts` | `importZip()`: accept + pass `skipRoot` through queue job payload alongside `overwrite` |
+| `apps/server/src/integrations/import/services/file-import-task.service.ts` | `processZIpImport()`: accept `skipRoot`; pass to `processGenericImport()`; inside: use `skipRoot` to conditionally apply the existing single-root-folder skipping logic instead of always skipping |
+| `apps/server/src/integrations/import/processors/file-task.processor.ts` | Pass `job.data.skipRoot` to `processZIpImport()` |
+
+### Matching Strategy (Overwrite)
 
 | Import type | Match key |
 |-------------|-----------|
@@ -78,31 +118,27 @@ The option is **opt-in** (checkbox, off by default).
 
 Title matching is case-insensitive, whitespace-trimmed.
 
-### Files to Change (Feature 2)
-
-| File | What changes |
-|------|-------------|
-| `apps/client/src/features/page/components/page-import-modal.tsx` | Add "Overwrite existing pages" `Checkbox` state; pass `overwrite` flag to `importPage()` / `importZip()` calls |
-| `apps/client/src/features/page/services/page-service.ts` | Add `overwrite?: boolean` param to `importPage()` and `importZip()`; append `"overwrite"` field to `FormData` |
-| `apps/server/src/integrations/import/import.controller.ts` | Bump `fields` limits by 1 on both endpoints; read `overwrite` string field, coerce to boolean, pass to service methods |
-| `apps/server/src/integrations/import/services/import.service.ts` | In `importPage()`: when `overwrite=true` call `pageRepo.findByTitleInSpace()`, if found call `updatePage()` instead of `insertPage()` |
-| `apps/server/src/integrations/import/services/file-import-task.service.ts` | In `processGenericImport()`: when `overwrite=true`, before inserting each page call `findByTitleInSpace(title, spaceId, parentPageId)`, if found do `UPDATE` instead of `INSERT` |
-| `apps/server/src/database/repos/page/page.repo.ts` | Add `findByTitleInSpace(title: string, spaceId: string, parentPageId: string \| null)` — case-insensitive title lookup |
-
 ### Data Flow
 
 ```
-User checks "Overwrite" → FormData.overwrite = "true"
+FormData: overwrite="false", skipRoot="true"
   ↓
-Controller reads field → passes overwrite=true to service
+Controller → importZip(... overwrite, skipRoot)
   ↓
-Service: findByTitleInSpace(title, spaceId, parentPageId)
-  → found  → updatePage(id, { content, ydoc, textContent, updatedAt })
-  → not found → insertPage(...)  (normal path, creates new page)
+Queue job payload: { fileTaskId, overwrite, skipRoot }
+  ↓
+Processor → processZIpImport(fileTaskId, overwrite, skipRoot)
+  ↓
+processGenericImport({ extractDir, fileTask, overwrite, skipRoot })
+  → skipRoot=true  → skip single root folder (existing logic)
+  → skipRoot=false → create root folder as a page too
+  → overwrite=true → findByTitleInSpace() before insert
 ```
 
 ## Notes
 
 - Page history entries are created automatically by Hocuspocus whenever a document is opened after ydoc binary changes — no manual snapshot call needed.
 - No schema/migration changes required for either feature.
-- `overwrite` does not need to be persisted on `fileTask` for v1.
+- Neither `overwrite` nor `skipRoot` need to be persisted on `fileTask` for v1.
+- `skipRoot` only affects ZIP imports; single-file import ignores it.
+
