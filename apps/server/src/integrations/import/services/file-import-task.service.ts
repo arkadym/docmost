@@ -664,6 +664,25 @@ export class FileImportTaskService {
                 trx,
               );
               if (existing) {
+                // Compare plain-text content (whitespace-normalized) to skip
+                // pages whose body hasn't actually changed. This avoids spurious
+                // history entries and DB writes for notes that differ only in
+                // blank lines or spacing.
+                const normalize = (s: string | null | undefined) =>
+                  (s ?? '').replace(/\s+/g, '');
+                const incomingText = jsonToText(prosemirrorJson);
+                const contentChanged =
+                  normalize(incomingText) !== normalize(existing.textContent);
+
+                if (!contentChanged) {
+                  // Content identical — just wire up remap so children resolve
+                  pageIdRemap.set(page.id, existing.id);
+                  validPageIds.add(existing.id);
+                  pageTitles.set(existing.id, pageTitle);
+                  totalPagesProcessed++;
+                  continue;
+                }
+
                 // Save current page state as history before overwriting
                 if (existing.content) {
                   await this.pageHistoryRepo.saveHistory(existing, { trx });
@@ -682,7 +701,7 @@ export class FileImportTaskService {
                   .set({
                     title: pageTitle,
                     content: prosemirrorJson,
-                    textContent: jsonToText(prosemirrorJson),
+                    textContent: incomingText,
                     ydoc: overwriteYdoc,
                     lastUpdatedById: fileTask.creatorId,
                     updatedAt: new Date(),
