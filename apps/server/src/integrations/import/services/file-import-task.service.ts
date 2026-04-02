@@ -223,26 +223,6 @@ export class FileImportTaskService {
       }
     });
 
-    // Determine if there's a single root container folder
-    const rootLevelItems = new Set<string>();
-    pagesMap.forEach((page) => {
-      const firstSegment = page.filePath.split('/')[0];
-      rootLevelItems.add(firstSegment);
-    });
-
-    // If all files are in a single root folder and no files at root level exist
-    let skipRootFolder: string | null = null;
-    if (rootLevelItems.size === 1) {
-      const onlyRootItem = Array.from(rootLevelItems)[0];
-      // Check if this is a folder (not a file at root)
-      const hasRootFiles = Array.from(pagesMap.keys()).some(
-        (filePath) => !filePath.includes('/'),
-      );
-      if (!hasRootFiles) {
-        skipRootFolder = onlyRootItem;
-      }
-    }
-
     // For each folder with content, create a placeholder page if no corresponding .md or .html exists
     // Process folders with partial UUIDs first so they claim their specific files
     // before plain folders (without partial UUIDs) take whatever remains.
@@ -255,13 +235,6 @@ export class FileImportTaskService {
       : [...foldersWithContent];
 
     sortedFolders.forEach((folderPath) => {
-      if (
-        skipRootFolder &&
-        folderPath?.toLowerCase() === skipRootFolder?.toLowerCase()
-      ) {
-        return;
-      }
-
       const mdPath = `${folderPath}.md`;
       const htmlPath = `${folderPath}.html`;
 
