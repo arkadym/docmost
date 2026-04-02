@@ -475,6 +475,8 @@ export class FileImportTaskService {
     const allBacklinks: any[] = [];
     const validPageIds = new Set<string>();
     const pageTitles = new Map<string, string>();
+    // Maps imported page UUID → existing DB page UUID (populated during overwrite)
+    const pageIdRemap = new Map<string, string>();
     let totalPagesProcessed = 0;
 
     // Sort levels to process in order
@@ -625,6 +627,11 @@ export class FileImportTaskService {
               importedProperties,
             );
 
+            // Remap parentPageId if a parent was overwritten (imported id → existing db id)
+            const resolvedParentPageId = page.parentPageId
+              ? (pageIdRemap.get(page.parentPageId) ?? page.parentPageId)
+              : page.parentPageId;
+
             const insertablePage: InsertablePage = {
               id: page.id,
               slugId: page.slugId,
@@ -638,7 +645,7 @@ export class FileImportTaskService {
               workspaceId: fileTask.workspaceId,
               creatorId: fileTask.creatorId,
               lastUpdatedById: fileTask.creatorId,
-              parentPageId: page.parentPageId,
+              parentPageId: resolvedParentPageId,
               ...(pageDates?.createdAt
                 ? { createdAt: pageDates.createdAt }
                 : {}),
@@ -651,7 +658,7 @@ export class FileImportTaskService {
               const existing = await this.pageRepo.findByTitleInSpace(
                 pageTitle,
                 fileTask.spaceId,
-                page.parentPageId ?? null,
+                resolvedParentPageId ?? null,
                 trx,
               );
               if (existing) {
@@ -670,8 +677,8 @@ export class FileImportTaskService {
                   })
                   .where('id', '=', existing.id)
                   .execute();
-                // Remap the imported page id to the existing page id so
-                // backlinks resolve correctly.
+                // Track imported id → existing db id so children resolve their parentPageId
+                pageIdRemap.set(page.id, existing.id);
                 validPageIds.add(existing.id);
                 pageTitles.set(existing.id, pageTitle);
                 allBacklinks.push(...backlinks.map((bl) => ({
