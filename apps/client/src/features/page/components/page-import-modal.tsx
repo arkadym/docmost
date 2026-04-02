@@ -1,6 +1,7 @@
 import {
   Modal,
   Button,
+  Checkbox,
   SimpleGrid,
   FileButton,
   Group,
@@ -85,6 +86,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const { t } = useTranslation();
   const [treeData, setTreeData] = useAtom(treeDataAtom);
   const [fileTaskId, setFileTaskId] = useState<string | null>(null);
+  const [overwrite, setOverwrite] = useState(false);
   const emit = useQueryEmit();
 
   const markdownFileRef = useRef<() => void>(null);
@@ -127,7 +129,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
         autoClose: false,
       });
 
-      const importTask = await importZip(selectedFile, spaceId, source);
+      const importTask = await importZip(selectedFile, spaceId, source, overwrite);
       notifications.update({
         id: "import",
         title: t("Importing pages"),
@@ -281,7 +283,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
 
     for (const file of selectedFiles) {
       try {
-        const page = await importPage(file, spaceId);
+        const page = await importPage(file, spaceId, overwrite);
         pages.push(page);
         pageCount += 1;
       } catch (err) {
@@ -469,6 +471,14 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
             )}
           </FileButton>
         </div>
+      </Group>
+
+      <Group justify="center" mt="xs">
+        <Checkbox
+          label={t("Overwrite existing pages with matching title")}
+          checked={overwrite}
+          onChange={(e) => setOverwrite(e.currentTarget.checked)}
+        />
       </Group>
     </>
   );

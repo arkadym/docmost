@@ -131,6 +131,26 @@ export class PageRepo {
     return result;
   }
 
+  async findByTitleInSpace(
+    title: string,
+    spaceId: string,
+    parentPageId: string | null,
+    trx?: KyselyTransaction,
+  ): Promise<Page | undefined> {
+    return dbOrTx(this.db, trx)
+      .selectFrom('pages')
+      .select(this.baseFields)
+      .where(sql`lower(title)`, '=', title.toLowerCase().trim())
+      .where('spaceId', '=', spaceId)
+      .where(
+        parentPageId
+          ? (eb) => eb('parentPageId', '=', parentPageId)
+          : (eb) => eb('parentPageId', 'is', null),
+      )
+      .where('deletedAt', 'is', null)
+      .executeTakeFirst();
+  }
+
   async insertPage(
     insertablePage: InsertablePage,
     trx?: KyselyTransaction,

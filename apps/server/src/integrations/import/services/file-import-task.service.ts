@@ -37,6 +37,7 @@ import {
 } from '../utils/import.utils';
 import { executeTx } from '@docmost/db/utils';
 import { BacklinkRepo } from '@docmost/db/repos/backlink/backlink.repo';
+import { PageRepo } from '@docmost/db/repos/page/page.repo';
 import { ImportAttachmentService } from './import-attachment.service';
 import { ModuleRef } from '@nestjs/core';
 import { PageService } from '../../../core/page/services/page.service';
@@ -58,6 +59,7 @@ export class FileImportTaskService {
     private readonly importService: ImportService,
     private readonly pageService: PageService,
     private readonly backlinkRepo: BacklinkRepo,
+    private readonly pageRepo: PageRepo,
     @InjectKysely() private readonly db: KyselyDB,
     private readonly importAttachmentService: ImportAttachmentService,
     private moduleRef: ModuleRef,
@@ -65,7 +67,7 @@ export class FileImportTaskService {
     @Inject(AUDIT_SERVICE) private readonly auditService: IAuditService,
   ) {}
 
-  async processZIpImport(fileTaskId: string): Promise<void> {
+  async processZIpImport(fileTaskId: string, overwrite = false): Promise<void> {
     const fileTask = await this.db
       .selectFrom('fileTasks')
       .selectAll()
@@ -119,6 +121,7 @@ export class FileImportTaskService {
         await this.processGenericImport({
           extractDir: tmpExtractDir,
           fileTask,
+          overwrite,
         });
       }
 
@@ -166,8 +169,9 @@ export class FileImportTaskService {
   async processGenericImport(opts: {
     extractDir: string;
     fileTask: FileTask;
+    overwrite?: boolean;
   }): Promise<void> {
-    const { extractDir, fileTask } = opts;
+    const { extractDir, fileTask, overwrite = false } = opts;
     const isNotion = fileTask.source === FileImportSource.Notion;
     const isJoplin = fileTask.source === FileImportSource.Joplin;
     const allFiles = await collectMarkdownAndHtmlFiles(extractDir);
@@ -498,6 +502,14 @@ export class FileImportTaskService {
                   // the HTML→ProseMirror conversion below.
                   page['_frontmatterYaml'] = fm.yaml;
                   content = await markdownToHtml(fm.body);
+                } else if (isJoplin) {
+                  // Joplin markdown notes start with: # Title\nCreated: ...\nModified: ...\n---
+                  const { cleanMarkdown, bodyTitle, bodyDate, modifiedDate } =
+                    this.importService.processJoplinMarkdown(content);
+                  if (bodyTitle) page['_joplinBodyTitle'] = bodyTitle;
+                  if (bodyDate) page['_bodyDate'] = bodyDate;
+                  if (modifiedDate) page['_bodyModifiedDate'] = modifiedDate;
+                  content = await markdownToHtml(cleanMarkdown);
                 } else {
                   content = await markdownToHtml(content);
                 }
@@ -596,24 +608,31 @@ export class FileImportTaskService {
             // Body date (from OneNote title div) takes priority over frontmatter dates
             // (which are Joplin processing timestamps, not the original note dates)
             const bodyDate = page['_bodyDate'] as Date | undefined;
+            const bodyModifiedDate = page['_bodyModifiedDate'] as Date | undefined;
             const fmDates = page['_dates'] as
               | { createdAt?: Date; updatedAt?: Date }
               | undefined;
             const pageDates: { createdAt?: Date; updatedAt?: Date } = bodyDate
-              ? { createdAt: bodyDate }
+              ? {
+                  createdAt: bodyDate,
+                  ...(bodyModifiedDate ? { updatedAt: bodyModifiedDate } : {}),
+                }
               : (fmDates ?? {});
+
+            const pageTitle = title || titleOverride || page.name;
+            const ydoc = await this.importService.createYdoc(
+              prosemirrorJson,
+              importedProperties,
+            );
 
             const insertablePage: InsertablePage = {
               id: page.id,
               slugId: page.slugId,
-              title: title || titleOverride || page.name,
+              title: pageTitle,
               icon: page.icon || pageIcon || null,
               content: prosemirrorJson,
               textContent: jsonToText(prosemirrorJson),
-              ydoc: await this.importService.createYdoc(
-                prosemirrorJson,
-                importedProperties,
-              ),
+              ydoc,
               position: page.position!,
               spaceId: fileTask.spaceId,
               workspaceId: fileTask.workspaceId,
@@ -627,6 +646,43 @@ export class FileImportTaskService {
                 ? { updatedAt: pageDates.updatedAt }
                 : {}),
             };
+
+            if (overwrite) {
+              const existing = await this.pageRepo.findByTitleInSpace(
+                pageTitle,
+                fileTask.spaceId,
+                page.parentPageId ?? null,
+                trx,
+              );
+              if (existing) {
+                await trx
+                  .updateTable('pages')
+                  .set({
+                    title: pageTitle,
+                    content: prosemirrorJson,
+                    textContent: jsonToText(prosemirrorJson),
+                    ydoc,
+                    lastUpdatedById: fileTask.creatorId,
+                    updatedAt: new Date(),
+                    ...(pageDates?.updatedAt
+                      ? { updatedAt: pageDates.updatedAt }
+                      : {}),
+                  })
+                  .where('id', '=', existing.id)
+                  .execute();
+                // Remap the imported page id to the existing page id so
+                // backlinks resolve correctly.
+                validPageIds.add(existing.id);
+                pageTitles.set(existing.id, pageTitle);
+                allBacklinks.push(...backlinks.map((bl) => ({
+                  ...bl,
+                  sourcePageId:
+                    bl.sourcePageId === page.id ? existing.id : bl.sourcePageId,
+                })));
+                totalPagesProcessed++;
+                continue;
+              }
+            }
 
             await trx.insertInto('pages').values(insertablePage).execute();
 

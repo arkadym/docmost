@@ -59,6 +59,7 @@ export class ImportService {
     userId: string,
     spaceId: string,
     workspaceId: string,
+    overwrite = false,
   ) {
     const file = await filePromise;
     const fileBuffer = await file.toBuffer();
@@ -142,15 +143,48 @@ export class ImportService {
 
     if (prosemirrorJson) {
       try {
+        const ydoc = await this.createYdoc(prosemirrorJson, importedProperties);
+        const content = prosemirrorJson;
+        const textContent = jsonToText(prosemirrorJson);
+
+        if (overwrite) {
+          const existing = await this.pageRepo.findByTitleInSpace(
+            pageTitle,
+            spaceId,
+            null,
+          );
+          if (existing) {
+            await this.pageRepo.updatePage(
+              {
+                title: pageTitle,
+                content,
+                textContent,
+                ydoc,
+                lastUpdatedById: userId,
+                workspaceId,
+                ...(frontmatterDates.updatedAt
+                  ? { updatedAt: frontmatterDates.updatedAt }
+                  : {}),
+              },
+              existing.id,
+            );
+            createdPage = { ...existing, title: pageTitle };
+            this.logger.debug(
+              `Overwrote existing page "${pageTitle}" (ID: ${existing.id})`,
+            );
+            return createdPage;
+          }
+        }
+
         const pagePosition = await this.getNewPagePosition(spaceId);
 
         createdPage = await this.pageRepo.insertPage({
           ...(pageId ? { id: pageId } : {}),
           slugId: generateSlugId(),
           title: pageTitle,
-          content: prosemirrorJson,
-          textContent: jsonToText(prosemirrorJson),
-          ydoc: await this.createYdoc(prosemirrorJson, importedProperties),
+          content,
+          textContent,
+          ydoc,
           position: pagePosition,
           spaceId: spaceId,
           creatorId: userId,
@@ -201,6 +235,108 @@ export class ImportService {
     } catch (err) {
       throw err;
     }
+  }
+
+  /**
+   * Process a Joplin-exported markdown note whose first lines may be:
+   *   # Title
+   *   (blank lines)
+   *   Created: 2014-09-05 14:50:04 +0800
+   *   (blank lines)
+   *   Modified: 2021-11-27 23:19:13 +0700
+   *   (blank lines)
+   *   ---
+   *
+   * Strips those header lines and returns the extracted metadata.
+   * Empty lines between header elements are skipped, not treated as terminators.
+   */
+  processJoplinMarkdown(markdown: string): {
+    cleanMarkdown: string;
+    bodyTitle: string | undefined;
+    bodyDate: Date | undefined;
+    modifiedDate: Date | undefined;
+  } {
+    const lines = markdown.split('\n');
+    let bodyTitle: string | undefined;
+    let bodyDate: Date | undefined;
+    let modifiedDate: Date | undefined;
+
+    const titleMatch = lines[0]?.match(/^#\s+(.+)/);
+    if (!titleMatch) {
+      return { cleanMarkdown: markdown, bodyTitle, bodyDate, modifiedDate };
+    }
+
+    bodyTitle = titleMatch[1].trim();
+
+    // Indices of lines belonging to the Joplin header (title + meta + separator)
+    const headerIndices = new Set<number>([0]);
+    let foundSeparator = false;
+    let foundNonBlankNonHeader = false;
+
+    for (let i = 1; i < Math.min(lines.length, 20); i++) {
+      const line = lines[i].trim();
+
+      if (line === '') {
+        // Blank lines inside header region — skip but don't stop scanning
+        headerIndices.add(i);
+        continue;
+      }
+
+      const createdMatch = line.match(/^Created:\s*(.+)$/i);
+      if (createdMatch) {
+        headerIndices.add(i);
+        const d = this.parseJoplinDate(createdMatch[1].trim());
+        if (d) bodyDate = d;
+        continue;
+      }
+
+      const modifiedMatch = line.match(/^Modified:\s*(.+)$/i);
+      if (modifiedMatch) {
+        headerIndices.add(i);
+        const d = this.parseJoplinDate(modifiedMatch[1].trim());
+        if (d) modifiedDate = d;
+        continue;
+      }
+
+      if (line === '---') {
+        headerIndices.add(i);
+        foundSeparator = true;
+        break;
+      }
+
+      // Any other non-blank line ends the header scan
+      foundNonBlankNonHeader = true;
+      break;
+    }
+
+    // Only strip header if we got a clean terminator (separator or just meta lines)
+    if (foundNonBlankNonHeader) {
+      return { cleanMarkdown: markdown, bodyTitle, bodyDate, modifiedDate };
+    }
+
+    // Remove header lines; also remove leading blank lines that follow
+    const cleanLines = lines.filter((_, idx) => !headerIndices.has(idx));
+    while (cleanLines.length > 0 && cleanLines[0].trim() === '') {
+      cleanLines.shift();
+    }
+
+    return { cleanMarkdown: cleanLines.join('\n'), bodyTitle, bodyDate, modifiedDate };
+  }
+
+  /**
+   * Parse Joplin's date format: "2014-09-05 14:50:04 +0800"
+   * (space instead of T, timezone without colon — not standard ISO 8601)
+   */
+  private parseJoplinDate(value: string): Date | undefined {
+    // Normalize "YYYY-MM-DD HH:MM:SS +HHMM" → "YYYY-MM-DDTHH:MM:SS+HH:MM"
+    const normalized = value
+      .replace(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})\s+([+-])(\d{2})(\d{2})$/, '$1T$2$3$4:$5');
+    const d = new Date(normalized);
+    if (!isNaN(d.getTime())) return d;
+    // Fallback to standard ISO / RFC
+    const d2 = new Date(value);
+    if (!isNaN(d2.getTime())) return d2;
+    return undefined;
   }
 
   processJoplinHtml(html: string): {
@@ -351,6 +487,7 @@ export class ImportService {
     userId: string,
     spaceId: string,
     workspaceId: string,
+    overwrite = false,
   ) {
     const file = await filePromise;
     const fileExtension = path.extname(file.filename).toLowerCase();
@@ -389,6 +526,7 @@ export class ImportService {
 
     await this.fileTaskQueue.add(QueueJob.IMPORT_TASK, {
       fileTaskId: fileTaskId,
+      overwrite,
     });
 
     return fileTask;
