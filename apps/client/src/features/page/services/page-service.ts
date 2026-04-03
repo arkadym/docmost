@@ -125,10 +125,11 @@ export async function exportPage(data: IExportPageParams): Promise<void> {
   saveAs(req.data, decodedFileName);
 }
 
-export async function importPage(file: File, spaceId: string) {
+export async function importPage(file: File, spaceId: string, overwrite = false) {
   const formData = new FormData();
-  formData.append("spaceId", spaceId);
-  formData.append("file", file);
+  formData.append('spaceId', spaceId);
+  formData.append('overwrite', String(overwrite));
+  formData.append('file', file);
 
   const req = await api.post<IPage>("/pages/import", formData, {
     headers: {
@@ -143,11 +144,17 @@ export async function importZip(
   file: File,
   spaceId: string,
   source?: string,
+  overwrite = false,
+  skipRoot = true,
+  createSummary = false,
 ): Promise<IFileTask> {
   const formData = new FormData();
-  formData.append("spaceId", spaceId);
-  formData.append("source", source);
-  formData.append("file", file);
+  formData.append('spaceId', spaceId);
+  formData.append('source', source);
+  formData.append('overwrite', String(overwrite));
+  formData.append('skipRoot', String(skipRoot));
+  formData.append('createSummary', String(createSummary));
+  formData.append('file', file);
 
   const req = await api.post<any>("/pages/import-zip", formData, {
     headers: {

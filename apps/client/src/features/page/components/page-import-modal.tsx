@@ -1,9 +1,12 @@
 import {
   Modal,
   Button,
+  Divider,
   SimpleGrid,
   FileButton,
   Group,
+  Stack,
+  Switch,
   Text,
   Tooltip,
 } from "@mantine/core";
@@ -85,6 +88,9 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const { t } = useTranslation();
   const [treeData, setTreeData] = useAtom(treeDataAtom);
   const [fileTaskId, setFileTaskId] = useState<string | null>(null);
+  const [overwrite, setOverwrite] = useState(false);
+  const [skipRoot, setSkipRoot] = useState(true);
+  const [createSummary, setCreateSummary] = useState(false);
   const emit = useQueryEmit();
 
   const markdownFileRef = useRef<() => void>(null);
@@ -127,7 +133,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
         autoClose: false,
       });
 
-      const importTask = await importZip(selectedFile, spaceId, source);
+      const importTask = await importZip(selectedFile, spaceId, source, overwrite, skipRoot, createSummary);
       notifications.update({
         id: "import",
         title: t("Importing pages"),
@@ -281,7 +287,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
 
     for (const file of selectedFiles) {
       try {
-        const page = await importPage(file, spaceId);
+        const page = await importPage(file, spaceId, overwrite);
         pages.push(page);
         pageCount += 1;
       } catch (err) {
@@ -330,6 +336,33 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   // @ts-ignore
   return (
     <>
+      <Stack gap={0} mb="md">
+        <Switch
+          label={t("Skip root folder")}
+          labelPosition="left"
+          checked={skipRoot}
+          onChange={(e) => setSkipRoot(e.currentTarget.checked)}
+          styles={{ body: { width: "100%", justifyContent: "space-between" } }}
+          py="sm"
+        />
+        <Switch
+          label={t("Overwrite existing pages")}
+          labelPosition="left"
+          checked={overwrite}
+          onChange={(e) => setOverwrite(e.currentTarget.checked)}
+          styles={{ body: { width: "100%", justifyContent: "space-between" } }}
+          py="sm"
+        />
+        <Switch
+          label={t("Create import summary")}
+          labelPosition="left"
+          checked={createSummary}
+          onChange={(e) => setCreateSummary(e.currentTarget.checked)}
+          styles={{ body: { width: "100%", justifyContent: "space-between" } }}
+          py="sm"
+        />
+      </Stack>
+      <Divider mb="md" />
       <SimpleGrid cols={2}>
         <FileButton onChange={handleFileUpload} accept=".md" multiple resetRef={markdownFileRef}>
           {(props) => (

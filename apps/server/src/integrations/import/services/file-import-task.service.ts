@@ -37,6 +37,8 @@ import {
 } from '../utils/import.utils';
 import { executeTx } from '@docmost/db/utils';
 import { BacklinkRepo } from '@docmost/db/repos/backlink/backlink.repo';
+import { PageRepo } from '@docmost/db/repos/page/page.repo';
+import { PageHistoryRepo } from '@docmost/db/repos/page/page-history.repo';
 import { ImportAttachmentService } from './import-attachment.service';
 import { ModuleRef } from '@nestjs/core';
 import { PageService } from '../../../core/page/services/page.service';
@@ -58,6 +60,8 @@ export class FileImportTaskService {
     private readonly importService: ImportService,
     private readonly pageService: PageService,
     private readonly backlinkRepo: BacklinkRepo,
+    private readonly pageRepo: PageRepo,
+    private readonly pageHistoryRepo: PageHistoryRepo,
     @InjectKysely() private readonly db: KyselyDB,
     private readonly importAttachmentService: ImportAttachmentService,
     private moduleRef: ModuleRef,
@@ -65,7 +69,7 @@ export class FileImportTaskService {
     @Inject(AUDIT_SERVICE) private readonly auditService: IAuditService,
   ) {}
 
-  async processZIpImport(fileTaskId: string): Promise<void> {
+  async processZIpImport(fileTaskId: string, overwrite = false, skipRoot = true, createSummary = false): Promise<void> {
     const fileTask = await this.db
       .selectFrom('fileTasks')
       .selectAll()
@@ -119,6 +123,9 @@ export class FileImportTaskService {
         await this.processGenericImport({
           extractDir: tmpExtractDir,
           fileTask,
+          overwrite,
+          skipRoot,
+          createSummary,
         });
       }
 
@@ -166,8 +173,11 @@ export class FileImportTaskService {
   async processGenericImport(opts: {
     extractDir: string;
     fileTask: FileTask;
+    overwrite?: boolean;
+    skipRoot?: boolean;
+    createSummary?: boolean;
   }): Promise<void> {
-    const { extractDir, fileTask } = opts;
+    const { extractDir, fileTask, overwrite = false, skipRoot = true, createSummary = false } = opts;
     const isNotion = fileTask.source === FileImportSource.Notion;
     const isJoplin = fileTask.source === FileImportSource.Joplin;
     const allFiles = await collectMarkdownAndHtmlFiles(extractDir);
@@ -219,23 +229,21 @@ export class FileImportTaskService {
       }
     });
 
-    // Determine if there's a single root container folder
-    const rootLevelItems = new Set<string>();
-    pagesMap.forEach((page) => {
-      const firstSegment = page.filePath.split('/')[0];
-      rootLevelItems.add(firstSegment);
-    });
-
-    // If all files are in a single root folder and no files at root level exist
+    // Determine if there's a single root container folder to optionally skip
     let skipRootFolder: string | null = null;
-    if (rootLevelItems.size === 1) {
-      const onlyRootItem = Array.from(rootLevelItems)[0];
-      // Check if this is a folder (not a file at root)
-      const hasRootFiles = Array.from(pagesMap.keys()).some(
-        (filePath) => !filePath.includes('/'),
-      );
-      if (!hasRootFiles) {
-        skipRootFolder = onlyRootItem;
+    if (skipRoot) {
+      const rootLevelItems = new Set<string>();
+      pagesMap.forEach((page) => {
+        rootLevelItems.add(page.filePath.split('/')[0]);
+      });
+      if (rootLevelItems.size === 1) {
+        const onlyRoot = Array.from(rootLevelItems)[0];
+        const hasRootFiles = Array.from(pagesMap.keys()).some(
+          (fp) => !fp.includes('/'),
+        );
+        if (!hasRootFiles) {
+          skipRootFolder = onlyRoot;
+        }
       }
     }
 
@@ -253,7 +261,7 @@ export class FileImportTaskService {
     sortedFolders.forEach((folderPath) => {
       if (
         skipRootFolder &&
-        folderPath?.toLowerCase() === skipRootFolder?.toLowerCase()
+        folderPath.toLowerCase() === skipRootFolder.toLowerCase()
       ) {
         return;
       }
@@ -471,7 +479,13 @@ export class FileImportTaskService {
     const allBacklinks: any[] = [];
     const validPageIds = new Set<string>();
     const pageTitles = new Map<string, string>();
+    // Maps imported page UUID → existing DB page UUID (populated during overwrite)
+    const pageIdRemap = new Map<string, string>();
     let totalPagesProcessed = 0;
+
+    type ImportStatus = 'created' | 'updated' | 'unchanged';
+    interface SummaryEntry { filePath: string; status: ImportStatus; }
+    const summaryEntries: SummaryEntry[] = [];
 
     // Sort levels to process in order
     const sortedLevels = Array.from(pagesByLevel.keys()).sort((a, b) => a - b);
@@ -498,6 +512,14 @@ export class FileImportTaskService {
                   // the HTML→ProseMirror conversion below.
                   page['_frontmatterYaml'] = fm.yaml;
                   content = await markdownToHtml(fm.body);
+                } else if (isJoplin) {
+                  // Joplin markdown notes start with: # Title\nCreated: ...\nModified: ...\n---
+                  const { cleanMarkdown, bodyTitle, bodyDate, modifiedDate } =
+                    this.importService.processJoplinMarkdown(content);
+                  if (bodyTitle) page['_joplinBodyTitle'] = bodyTitle;
+                  if (bodyDate) page['_bodyDate'] = bodyDate;
+                  if (modifiedDate) page['_bodyModifiedDate'] = modifiedDate;
+                  content = await markdownToHtml(cleanMarkdown);
                 } else {
                   content = await markdownToHtml(content);
                 }
@@ -596,30 +618,55 @@ export class FileImportTaskService {
             // Body date (from OneNote title div) takes priority over frontmatter dates
             // (which are Joplin processing timestamps, not the original note dates)
             const bodyDate = page['_bodyDate'] as Date | undefined;
+            const bodyModifiedDate = page['_bodyModifiedDate'] as Date | undefined;
             const fmDates = page['_dates'] as
               | { createdAt?: Date; updatedAt?: Date }
               | undefined;
             const pageDates: { createdAt?: Date; updatedAt?: Date } = bodyDate
-              ? { createdAt: bodyDate }
+              ? {
+                  createdAt: bodyDate,
+                  ...(bodyModifiedDate ? { updatedAt: bodyModifiedDate } : {}),
+                }
               : (fmDates ?? {});
+
+            // Only let the extracted heading override the filename when it is
+            // a genuine expansion of it (i.e. the filename is a prefix of the
+            // header title). This prevents Joplin duplicate-file suffixes like
+            // "_1" or date suffixes from being silently dropped:
+            //   "Задачи_1" (filename) vs "Задачи" (header) → header does NOT
+            //     start with filename "Задачи_1" → keep filename ✓
+            //   "Тестовое задание" (filename) vs "Тестовое задание (простое)"
+            //     (header) → header starts with filename → use header ✓
+            const candidateTitle = title || titleOverride;
+            const pageTitle =
+              candidateTitle &&
+              candidateTitle.toLowerCase().startsWith(page.name.toLowerCase())
+                ? candidateTitle
+                : page.name || candidateTitle || '';
+            const ydoc = await this.importService.createYdoc(
+              prosemirrorJson,
+              importedProperties,
+            );
+
+            // Remap parentPageId if a parent was overwritten (imported id → existing db id)
+            const resolvedParentPageId = page.parentPageId
+              ? (pageIdRemap.get(page.parentPageId) ?? page.parentPageId)
+              : page.parentPageId;
 
             const insertablePage: InsertablePage = {
               id: page.id,
               slugId: page.slugId,
-              title: title || titleOverride || page.name,
+              title: pageTitle,
               icon: page.icon || pageIcon || null,
               content: prosemirrorJson,
               textContent: jsonToText(prosemirrorJson),
-              ydoc: await this.importService.createYdoc(
-                prosemirrorJson,
-                importedProperties,
-              ),
+              ydoc,
               position: page.position!,
               spaceId: fileTask.spaceId,
               workspaceId: fileTask.workspaceId,
               creatorId: fileTask.creatorId,
               lastUpdatedById: fileTask.creatorId,
-              parentPageId: page.parentPageId,
+              parentPageId: resolvedParentPageId,
               ...(pageDates?.createdAt
                 ? { createdAt: pageDates.createdAt }
                 : {}),
@@ -628,11 +675,83 @@ export class FileImportTaskService {
                 : {}),
             };
 
+            if (overwrite) {
+              const existing = await this.pageRepo.findByTitleInSpace(
+                pageTitle,
+                fileTask.spaceId,
+                resolvedParentPageId ?? null,
+                trx,
+              );
+              if (existing) {
+                // Compare plain-text content (whitespace-normalized) to skip
+                // pages whose body hasn't actually changed. This avoids spurious
+                // history entries and DB writes for notes that differ only in
+                // blank lines or spacing.
+                const normalize = (s: string | null | undefined) =>
+                  (s ?? '').replace(/\s+/g, '');
+                const incomingText = jsonToText(prosemirrorJson);
+                const contentChanged =
+                  normalize(incomingText) !== normalize(existing.textContent);
+
+                if (!contentChanged) {
+                  // Content identical — just wire up remap so children resolve
+                  pageIdRemap.set(page.id, existing.id);
+                  validPageIds.add(existing.id);
+                  pageTitles.set(existing.id, pageTitle);
+                  summaryEntries.push({ filePath: page.filePath, status: 'unchanged' });
+                  totalPagesProcessed++;
+                  continue;
+                }
+
+                // Save current page state as history before overwriting
+                if (existing.content) {
+                  await this.pageHistoryRepo.saveHistory(existing, { trx });
+                }
+
+                // Build a ydoc that properly replaces content while preserving
+                // Yjs CRDT history (delete old + insert new) to avoid duplication
+                const overwriteYdoc = this.importService.replaceYdocContent(
+                  existing.ydoc as Buffer | null | undefined,
+                  prosemirrorJson,
+                  importedProperties,
+                );
+
+                await trx
+                  .updateTable('pages')
+                  .set({
+                    title: pageTitle,
+                    content: prosemirrorJson,
+                    textContent: incomingText,
+                    ydoc: overwriteYdoc,
+                    lastUpdatedById: fileTask.creatorId,
+                    updatedAt: new Date(),
+                    ...(pageDates?.updatedAt
+                      ? { updatedAt: pageDates.updatedAt }
+                      : {}),
+                  })
+                  .where('id', '=', existing.id)
+                  .execute();
+                // Track imported id → existing db id so children resolve their parentPageId
+                pageIdRemap.set(page.id, existing.id);
+                validPageIds.add(existing.id);
+                pageTitles.set(existing.id, pageTitle);
+                summaryEntries.push({ filePath: page.filePath, status: 'updated' });
+                allBacklinks.push(...backlinks.map((bl) => ({
+                  ...bl,
+                  sourcePageId:
+                    bl.sourcePageId === page.id ? existing.id : bl.sourcePageId,
+                })));
+                totalPagesProcessed++;
+                continue;
+              }
+            }
+
             await trx.insertInto('pages').values(insertablePage).execute();
 
             // Track valid page IDs, titles, and collect backlinks
             validPageIds.add(insertablePage.id);
             pageTitles.set(insertablePage.id, insertablePage.title);
+            summaryEntries.push({ filePath: page.filePath, status: 'created' });
             allBacklinks.push(...backlinks);
             totalPagesProcessed++;
 
@@ -695,10 +814,81 @@ export class FileImportTaskService {
           actorType: 'user',
         });
       }
+
+      // Insert summary page outside main transaction so it never rolls back the import
+      if (createSummary && summaryEntries.length > 0) {
+        try {
+          await this.insertImportSummaryPage(fileTask, summaryEntries);
+        } catch (err) {
+          this.logger.error('Failed to create import summary page:', err);
+        }
+      }
     } catch (error) {
       this.logger.error('Failed to import files:', error);
       throw new Error(`File import failed: ${error?.['message']}`);
     }
+  }
+
+  private async insertImportSummaryPage(
+    fileTask: FileTask,
+    entries: Array<{ filePath: string; status: 'created' | 'updated' | 'unchanged' }>,
+  ): Promise<void> {
+    const statusEmoji = { created: '🟢', updated: '🟡', unchanged: '⚪' };
+    const now = new Date();
+
+    const zipName = path.basename(fileTask.fileName, path.extname(fileTask.fileName));
+    const pageTitle = `${zipName} import summary`;
+
+    const created = entries.filter((e) => e.status === 'created').length;
+    const updated = entries.filter((e) => e.status === 'updated').length;
+    const unchanged = entries.filter((e) => e.status === 'unchanged').length;
+
+    const dateStr = now.toISOString().replace('T', ' ').substring(0, 19);
+
+    const tableRows = entries
+      .map((e) => `| ${e.filePath} | ${statusEmoji[e.status]} ${e.status} |`)
+      .join('\n');
+
+    const markdown = `# ${pageTitle}
+
+Imported: ${dateStr}
+
+Total processed: ${entries.length} | 🟢 Created: ${created} | 🟡 Updated: ${updated} | ⚪ Unchanged: ${unchanged}
+
+| File | Status |
+|------|--------|
+${tableRows}
+`;
+
+    const html = await markdownToHtml(markdown);
+    const pmState = getProsemirrorContent(
+      await this.importService.processHTML(html),
+    );
+    const { title, prosemirrorJson } =
+      this.importService.extractTitleAndRemoveHeading(pmState);
+    const ydoc = await this.importService.createYdoc(prosemirrorJson, []);
+
+    const summaryPosition = generateJitteredKeyBetween(null, null);
+
+    await this.db
+      .insertInto('pages')
+      .values({
+        id: v7(),
+        slugId: generateSlugId(),
+        title: title ?? pageTitle,
+        content: prosemirrorJson,
+        textContent: jsonToText(prosemirrorJson),
+        ydoc,
+        position: summaryPosition,
+        spaceId: fileTask.spaceId,
+        workspaceId: fileTask.workspaceId,
+        creatorId: fileTask.creatorId,
+        lastUpdatedById: fileTask.creatorId,
+        parentPageId: null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
   }
 
   async getFileTask(fileTaskId: string) {
