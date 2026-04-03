@@ -28,6 +28,7 @@ import { useGetSpaceBySlugQuery } from "@/features/space/queries/space-query.ts"
 import { getSpaceUrl } from "@/lib/config.ts";
 import SpaceTree from "@/features/page/tree/components/space-tree.tsx";
 import { useSpaceAbility } from "@/features/space/permissions/use-space-ability.ts";
+import SortMenu from "@/features/page/tree/components/sort-menu.tsx";
 import {
   SpaceCaslAction,
   SpaceCaslSubject,
@@ -166,6 +167,8 @@ export function SpaceSidebar() {
             ) && (
               <Group gap="xs">
                 <SpaceMenu spaceId={space.id} onSpaceSettings={openSettings} />
+
+                <SortMenu spaceId={space.id} pageId={null} />
 
                 <Tooltip label={t("Create page")} withArrow position="right">
                   <ActionIcon
