@@ -10,6 +10,62 @@
 </div>
 <br />
 
+---
+
+## About this fork
+
+This is a personal fork of [Docmost](https://github.com/docmost/docmost), maintained by [@arkadym](https://github.com/arkadym) for my own self-hosted instance and day-to-day use.
+
+**A few honest disclaimers:**
+
+- I built these features for my own needs and currently have no time to maintain them as a proper open-source contribution.
+- I'm not a React developer, and I'm not deeply familiar with Docmost's internals — so I lean heavily on AI-assisted development (GitHub Copilot) to implement things.
+- Because of that — and the time constraints — I don't plan to submit pull requests or engage in upstream review cycles. The code works for me; use it at your own risk.
+
+If something here is useful to you, feel free to cherry-pick or fork.
+
+---
+
+## Features added in this fork
+
+### PlantUML diagrams
+- New `PlantUML` block type in the editor.
+- Split-view editor modal: code on the left, rendered preview on the right with debounced auto-render.
+- Wheel zoom, pan, and Reset Center in the preview pane.
+- Markdown export/import round-trip (code preserved as fenced block with metadata).
+
+### XMind import
+- Drag-and-drop `.xmind` files directly into the editor — converts the mindmap to a PlantUML `@startmindmap` diagram.
+- Full color mapping from XMind topic styles.
+- Toolbar: re-import from updated file, download original `.xmind`.
+
+### Lightbox for diagrams and images
+- Click any image, PlantUML, or DrawIO/Excalidraw diagram in read mode to open a full-screen lightbox with zoom and pan.
+
+### Logo badge overlay
+- DrawIO and Excalidraw diagram images display a small logo badge so you can tell them apart at a glance.
+
+### Page properties
+- A structured properties panel (outside the editor) backed by a Yjs `Y.Map` — survives real-time collaboration.
+- Properties are exported as YAML frontmatter in Markdown export and re-imported on Markdown/Joplin import.
+
+### Import improvements
+- **Overwrite mode** — re-importing a ZIP/Markdown file can update existing pages instead of always creating duplicates.
+- **Skip unchanged** — pages whose content hasn't changed are silently skipped.
+- **Import summary** — a report is shown after import listing created, updated, skipped, and failed pages.
+- **Joplin markdown** — improved handling of Joplin export format (front-matter dates, title headers, external links).
+- **OneNote / Joplin HTML** — strips redundant title `<div>`, extracts creation date, adds source-URL button.
+
+### Page sorting
+- Choose sort order per space or per folder (title A–Z, created date, updated date, manual).
+- Sort overrides are stored per-node, so different folders can have different orderings.
+- Pages re-sort live without a page reload.
+
+### Persistent aside panel
+- The sidebar/aside panel remembers its open/closed state and active section across navigation.
+
+---
+
 ## Getting started
 
 To get started with Docmost, please refer to our [documentation](https://docmost.com/docs) or try our [cloud version](https://docmost.com/pricing) .
