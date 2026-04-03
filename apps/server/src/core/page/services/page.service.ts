@@ -283,6 +283,8 @@ export class PageService {
         'parentPageId',
         'spaceId',
         'creatorId',
+        'createdAt',
+        'updatedAt',
         'deletedAt',
       ])
       .select((eb) => this.pageRepo.withHasChildren(eb))

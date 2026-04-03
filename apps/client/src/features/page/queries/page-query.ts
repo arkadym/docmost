@@ -184,6 +184,8 @@ export function useRestorePageMutation() {
           spaceId: restoredPage.spaceId,
           parentPageId: restoredPage.parentPageId,
           hasChildren: restoredPage.hasChildren || false,
+          createdAt: restoredPage.createdAt as unknown as string,
+          updatedAt: restoredPage.updatedAt as unknown as string,
           children: [],
         };
 

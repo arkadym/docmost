@@ -1,5 +1,75 @@
 import { IPage } from "@/features/page/types/page.types.ts";
 import { SpaceTreeNode } from "@/features/page/tree/types.ts";
+import { SortConfig, getEffectiveSort } from "@/features/page/tree/atoms/sort-atom.ts";
+
+export function sortNodes(
+  nodes: SpaceTreeNode[],
+  sort: SortConfig,
+): SpaceTreeNode[] {
+  if (sort.field === "manual") return nodes;
+
+  return [...nodes].sort((a, b) => {
+    let cmp = 0;
+    if (sort.field === "title") {
+      cmp = (a.name ?? "").localeCompare(b.name ?? "", undefined, {
+        sensitivity: "base",
+      });
+    } else if (sort.field === "createdAt") {
+      cmp =
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    } else if (sort.field === "updatedAt") {
+      cmp =
+        new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+    }
+    return sort.direction === "asc" ? cmp : -cmp;
+  });
+}
+
+/**
+ * Recursively re-sort every node in the tree that already has loaded children,
+ * respecting per-folder sort overrides.
+ *
+ * @param nodes     - array of root-level nodes (or children at any depth)
+ * @param spaceId   - current space id (for space-level fallback)
+ * @param ancestors - ordered pageIds from space root → parent of `nodes[0]`
+ * @param spaceSorts  - spaceSortAtom value
+ * @param folderSorts - folderSortAtom value
+ * @param isRoot    - when true, the nodes array itself is also re-sorted
+ */
+export function resortTree(
+  nodes: SpaceTreeNode[],
+  spaceId: string,
+  ancestors: string[],
+  spaceSorts: Record<string, SortConfig>,
+  folderSorts: Record<string, SortConfig | null>,
+  isRoot = false,
+): SpaceTreeNode[] {
+  // Optionally sort the array itself (root level)
+  const sorted = isRoot
+    ? sortNodes(nodes, getEffectiveSort(spaceId, null, [], spaceSorts, folderSorts))
+    : nodes;
+
+  return sorted.map((node) => {
+    if (!node.children || node.children.length === 0) return node;
+
+    const childSort = getEffectiveSort(
+      spaceId,
+      node.id,
+      ancestors,
+      spaceSorts,
+      folderSorts,
+    );
+    const sortedChildren = sortNodes(node.children, childSort);
+    const resortedChildren = resortTree(
+      sortedChildren,
+      spaceId,
+      [...ancestors, node.id],
+      spaceSorts,
+      folderSorts,
+    );
+    return { ...node, children: resortedChildren };
+  });
+}
 
 export function sortPositionKeys(keys: any[]) {
   return keys.sort((a, b) => {
@@ -25,6 +95,8 @@ export function buildTree(pages: IPage[]): SpaceTreeNode[] {
       spaceId: page.spaceId,
       parentPageId: page.parentPageId,
       canEdit: page.canEdit ?? page.permissions?.canEdit,
+      createdAt: page.createdAt as unknown as string,
+      updatedAt: page.updatedAt as unknown as string,
       children: [],
     };
   });

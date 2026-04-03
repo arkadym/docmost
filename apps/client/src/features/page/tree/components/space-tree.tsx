@@ -43,6 +43,8 @@ import {
   buildTreeWithChildren,
   mergeRootTrees,
   updateTreeNodeIcon,
+  sortNodes,
+  resortTree,
 } from "@/features/page/tree/utils/utils.ts";
 import { SpaceTreeNode } from "@/features/page/tree/types.ts";
 import {
@@ -69,6 +71,13 @@ import { mobileSidebarAtom } from "@/components/layouts/global/hooks/atoms/sideb
 import { useToggleSidebar } from "@/components/layouts/global/hooks/hooks/use-toggle-sidebar.ts";
 import CopyPageModal from "../../components/copy-page-modal.tsx";
 import { duplicatePage } from "../../services/page-service.ts";
+import SortMenu from "@/features/page/tree/components/sort-menu.tsx";
+import {
+  folderSortAtom,
+  getEffectiveSort,
+  spaceSortAtom,
+  SortConfig,
+} from "@/features/page/tree/atoms/sort-atom.ts";
 
 interface SpaceTreeProps {
   spaceId: string;
@@ -90,6 +99,8 @@ export default function SpaceTree({ spaceId, readOnly }: SpaceTreeProps) {
   } = useGetRootSidebarPagesQuery({
     spaceId,
   });
+  const [spaceSorts] = useAtom(spaceSortAtom);
+  const [folderSorts] = useAtom(folderSortAtom);
   const [, setTreeApi] = useAtom<TreeApi<SpaceTreeNode>>(treeApiAtom);
   const treeApiRef = useRef<TreeApi<SpaceTreeNode>>();
   const [openTreeNodes, setOpenTreeNodes] = useAtom<OpenMap>(openTreeNodesAtom);
@@ -123,21 +134,43 @@ export default function SpaceTree({ spaceId, readOnly }: SpaceTreeProps) {
     if (pagesData?.pages && !hasNextPage) {
       const allItems = pagesData.pages.flatMap((page) => page.items);
       const treeData = buildTree(allItems);
+      const sort: SortConfig = getEffectiveSort(spaceId, null, [], spaceSorts, folderSorts);
+      const sorted = sortNodes(treeData, sort);
 
       setData((prev) => {
         // fresh space; full reset
         if (prev.length === 0 || prev[0]?.spaceId !== spaceId) {
           setIsDataLoaded(true);
           setOpenTreeNodes({});
-          return treeData;
+          return sorted;
         }
 
         // same space; append only missing roots
         setIsDataLoaded(true);
-        return mergeRootTrees(prev, treeData);
+        return mergeRootTrees(prev, sorted);
       });
     }
   }, [pagesData, hasNextPage, spaceId]);
+
+  // When sort preferences change, immediately re-sort all already-loaded tree nodes
+  // (root level + any expanded folders), respecting per-folder overrides.
+  const prevSortRef = useRef<{ spaceSorts: typeof spaceSorts; folderSorts: typeof folderSorts } | null>(null);
+  useEffect(() => {
+    const prev = prevSortRef.current;
+    prevSortRef.current = { spaceSorts, folderSorts };
+
+    // Skip on first mount — pagesData effect already sorts on load
+    if (!prev) return;
+
+    // Skip if neither the space sort nor any relevant folder sort changed
+    const spaceChanged = prev.spaceSorts[spaceId] !== spaceSorts[spaceId];
+    const folderChanged = prev.folderSorts !== folderSorts;
+    if (!spaceChanged && !folderChanged) return;
+
+    setData((prev) =>
+      resortTree(prev, spaceId, [], spaceSorts, folderSorts, true),
+    );
+  }, [spaceSorts, folderSorts, spaceId]);
 
   useEffect(() => {
     const effectSpaceId = spaceId;
@@ -288,6 +321,8 @@ function Node({ node, style, dragHandle, tree }: NodeRendererProps<any>) {
   const [treeData, setTreeData] = useAtom(treeDataAtom);
   const [, appendChildren] = useAtom(appendNodeChildrenAtom);
   const emit = useQueryEmit();
+  const [spaceSorts] = useAtom(spaceSortAtom);
+  const [folderSorts] = useAtom(folderSortAtom);
   const { spaceSlug } = useParams();
   const timerRef = useRef(null);
   const [mobileSidebarOpened] = useAtom(mobileSidebarAtom);
@@ -328,9 +363,26 @@ function Node({ node, style, dragHandle, tree }: NodeRendererProps<any>) {
 
       const childrenTree = await fetchAllAncestorChildren(params);
 
+      // Collect ancestor ids from root → direct parent
+      const ancestors: string[] = [];
+      let cursor: NodeApi<SpaceTreeNode> | null = node.parent;
+      while (cursor && cursor.id !== "__REACT_ARBORIST_INTERNAL_ROOT__") {
+        ancestors.unshift(cursor.id);
+        cursor = cursor.parent;
+      }
+
+      const sort = getEffectiveSort(
+        node.data.spaceId,
+        node.data.id,
+        ancestors,
+        spaceSorts,
+        folderSorts,
+      );
+      const sorted = sortNodes(childrenTree, sort);
+
       appendChildren({
         parentId: node.data.id,
-        children: childrenTree,
+        children: sorted,
       });
     } catch (error) {
       console.error("Failed to fetch children:", error);
@@ -434,6 +486,21 @@ function Node({ node, style, dragHandle, tree }: NodeRendererProps<any>) {
 
         <div className={classes.actions}>
           <NodeMenu node={node} treeApi={tree} spaceId={node.data.spaceId} />
+
+          <SortMenu
+            spaceId={node.data.spaceId}
+            pageId={node.data.id}
+            ancestors={(() => {
+              const ancs: string[] = [];
+              let c: NodeApi<SpaceTreeNode> | null = node.parent;
+              while (c && c.id !== "__REACT_ARBORIST_INTERNAL_ROOT__") {
+                ancs.unshift(c.id);
+                c = c.parent;
+              }
+              return ancs;
+            })()}
+            variant="transparent"
+          />
 
           {tree.props.disableEdit !== true && node.data.canEdit !== false && (
             <CreateNode
@@ -541,6 +608,8 @@ function NodeMenu({ node, treeApi, spaceId }: NodeMenuProps) {
         icon: duplicatedPage.icon,
         hasChildren: duplicatedPage.hasChildren,
         canEdit: true,
+        createdAt: duplicatedPage.createdAt as unknown as string,
+        updatedAt: duplicatedPage.updatedAt as unknown as string,
         children: [],
       };
 
