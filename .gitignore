@@ -1,6 +1,7 @@
 .env
 .env.dev
 .env.prod
+.github
 data
 # compiled output
 /dist

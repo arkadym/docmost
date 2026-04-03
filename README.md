@@ -36,7 +36,7 @@ If something here is useful to you, feel free to cherry-pick or fork.
 
 ### XMind import
 - Drag-and-drop `.xmind` files directly into the editor — converts the mindmap to a PlantUML `@startmindmap` diagram.
-- Full color mapping from XMind topic styles.
+- Best-effort color mapping from XMind topic styles (XMind's format is undocumented, so results may vary).
 - Toolbar: re-import from updated file, download original `.xmind`.
 
 ### Lightbox for diagrams and images
