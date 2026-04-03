@@ -69,7 +69,7 @@ export class FileImportTaskService {
     @Inject(AUDIT_SERVICE) private readonly auditService: IAuditService,
   ) {}
 
-  async processZIpImport(fileTaskId: string, overwrite = false, skipRoot = true): Promise<void> {
+  async processZIpImport(fileTaskId: string, overwrite = false, skipRoot = true, createSummary = false): Promise<void> {
     const fileTask = await this.db
       .selectFrom('fileTasks')
       .selectAll()
@@ -125,6 +125,7 @@ export class FileImportTaskService {
           fileTask,
           overwrite,
           skipRoot,
+          createSummary,
         });
       }
 
@@ -174,8 +175,9 @@ export class FileImportTaskService {
     fileTask: FileTask;
     overwrite?: boolean;
     skipRoot?: boolean;
+    createSummary?: boolean;
   }): Promise<void> {
-    const { extractDir, fileTask, overwrite = false, skipRoot = true } = opts;
+    const { extractDir, fileTask, overwrite = false, skipRoot = true, createSummary = false } = opts;
     const isNotion = fileTask.source === FileImportSource.Notion;
     const isJoplin = fileTask.source === FileImportSource.Joplin;
     const allFiles = await collectMarkdownAndHtmlFiles(extractDir);
@@ -481,6 +483,10 @@ export class FileImportTaskService {
     const pageIdRemap = new Map<string, string>();
     let totalPagesProcessed = 0;
 
+    type ImportStatus = 'created' | 'updated' | 'unchanged';
+    interface SummaryEntry { filePath: string; status: ImportStatus; }
+    const summaryEntries: SummaryEntry[] = [];
+
     // Sort levels to process in order
     const sortedLevels = Array.from(pagesByLevel.keys()).sort((a, b) => a - b);
 
@@ -679,6 +685,7 @@ export class FileImportTaskService {
                   pageIdRemap.set(page.id, existing.id);
                   validPageIds.add(existing.id);
                   pageTitles.set(existing.id, pageTitle);
+                  summaryEntries.push({ filePath: page.filePath, status: 'unchanged' });
                   totalPagesProcessed++;
                   continue;
                 }
@@ -715,6 +722,7 @@ export class FileImportTaskService {
                 pageIdRemap.set(page.id, existing.id);
                 validPageIds.add(existing.id);
                 pageTitles.set(existing.id, pageTitle);
+                summaryEntries.push({ filePath: page.filePath, status: 'updated' });
                 allBacklinks.push(...backlinks.map((bl) => ({
                   ...bl,
                   sourcePageId:
@@ -730,6 +738,7 @@ export class FileImportTaskService {
             // Track valid page IDs, titles, and collect backlinks
             validPageIds.add(insertablePage.id);
             pageTitles.set(insertablePage.id, insertablePage.title);
+            summaryEntries.push({ filePath: page.filePath, status: 'created' });
             allBacklinks.push(...backlinks);
             totalPagesProcessed++;
 
@@ -792,10 +801,81 @@ export class FileImportTaskService {
           actorType: 'user',
         });
       }
+
+      // Insert summary page outside main transaction so it never rolls back the import
+      if (createSummary && summaryEntries.length > 0) {
+        try {
+          await this.insertImportSummaryPage(fileTask, summaryEntries);
+        } catch (err) {
+          this.logger.error('Failed to create import summary page:', err);
+        }
+      }
     } catch (error) {
       this.logger.error('Failed to import files:', error);
       throw new Error(`File import failed: ${error?.['message']}`);
     }
+  }
+
+  private async insertImportSummaryPage(
+    fileTask: FileTask,
+    entries: Array<{ filePath: string; status: 'created' | 'updated' | 'unchanged' }>,
+  ): Promise<void> {
+    const statusEmoji = { created: '🟢', updated: '🟡', unchanged: '⚪' };
+    const now = new Date();
+
+    const zipName = path.basename(fileTask.fileName, path.extname(fileTask.fileName));
+    const pageTitle = `${zipName} import summary`;
+
+    const created = entries.filter((e) => e.status === 'created').length;
+    const updated = entries.filter((e) => e.status === 'updated').length;
+    const unchanged = entries.filter((e) => e.status === 'unchanged').length;
+
+    const dateStr = now.toISOString().replace('T', ' ').substring(0, 19);
+
+    const tableRows = entries
+      .map((e) => `| ${e.filePath} | ${statusEmoji[e.status]} ${e.status} |`)
+      .join('\n');
+
+    const markdown = `# ${pageTitle}
+
+Imported: ${dateStr}
+
+Total processed: ${entries.length} | 🟢 Created: ${created} | 🟡 Updated: ${updated} | ⚪ Unchanged: ${unchanged}
+
+| File | Status |
+|------|--------|
+${tableRows}
+`;
+
+    const html = await markdownToHtml(markdown);
+    const pmState = getProsemirrorContent(
+      await this.importService.processHTML(html),
+    );
+    const { title, prosemirrorJson } =
+      this.importService.extractTitleAndRemoveHeading(pmState);
+    const ydoc = await this.importService.createYdoc(prosemirrorJson, []);
+
+    const summaryPosition = generateJitteredKeyBetween(null, null);
+
+    await this.db
+      .insertInto('pages')
+      .values({
+        id: v7(),
+        slugId: generateSlugId(),
+        title: title ?? pageTitle,
+        content: prosemirrorJson,
+        textContent: jsonToText(prosemirrorJson),
+        ydoc,
+        position: summaryPosition,
+        spaceId: fileTask.spaceId,
+        workspaceId: fileTask.workspaceId,
+        creatorId: fileTask.creatorId,
+        lastUpdatedById: fileTask.creatorId,
+        parentPageId: null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
   }
 
   async getFileTask(fileTaskId: string) {

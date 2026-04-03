@@ -552,6 +552,7 @@ export class ImportService {
     workspaceId: string,
     overwrite = false,
     skipRoot = true,
+    createSummary = false,
   ) {
     const file = await filePromise;
     const fileExtension = path.extname(file.filename).toLowerCase();
@@ -592,6 +593,7 @@ export class ImportService {
       fileTaskId: fileTaskId,
       overwrite,
       skipRoot,
+      createSummary,
     });
 
     return fileTask;

@@ -146,12 +146,14 @@ export async function importZip(
   source?: string,
   overwrite = false,
   skipRoot = true,
+  createSummary = false,
 ): Promise<IFileTask> {
   const formData = new FormData();
   formData.append('spaceId', spaceId);
   formData.append('source', source);
   formData.append('overwrite', String(overwrite));
   formData.append('skipRoot', String(skipRoot));
+  formData.append('createSummary', String(createSummary));
   formData.append('file', file);
 
   const req = await api.post<any>("/pages/import-zip", formData, {

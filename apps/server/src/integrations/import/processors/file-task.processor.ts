@@ -25,6 +25,7 @@ export class FileTaskProcessor extends WorkerHost implements OnModuleDestroy {
             job.data.fileTaskId,
             job.data.overwrite ?? false,
             job.data.skipRoot ?? true,
+            job.data.createSummary ?? false,
           );
           break;
         case QueueJob.EXPORT_TASK:

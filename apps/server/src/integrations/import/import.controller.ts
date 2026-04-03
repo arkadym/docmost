@@ -163,6 +163,7 @@ export class ImportController {
     const source = file.fields?.source?.value;
     const overwrite = file.fields?.overwrite?.value === 'true';
     const skipRoot = file.fields?.skipRoot?.value !== 'false';
+    const createSummary = file.fields?.createSummary?.value === 'true';
 
     const validZipSources = ['generic', 'notion', 'confluence', 'joplin'];
     if (!validZipSources.includes(source)) {
@@ -200,6 +201,7 @@ export class ImportController {
       workspace.id,
       overwrite,
       skipRoot,
+      createSummary,
     );
   }
 }

@@ -90,6 +90,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const [fileTaskId, setFileTaskId] = useState<string | null>(null);
   const [overwrite, setOverwrite] = useState(false);
   const [skipRoot, setSkipRoot] = useState(true);
+  const [createSummary, setCreateSummary] = useState(false);
   const emit = useQueryEmit();
 
   const markdownFileRef = useRef<() => void>(null);
@@ -132,7 +133,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
         autoClose: false,
       });
 
-      const importTask = await importZip(selectedFile, spaceId, source, overwrite, skipRoot);
+      const importTask = await importZip(selectedFile, spaceId, source, overwrite, skipRoot, createSummary);
       notifications.update({
         id: "import",
         title: t("Importing pages"),
@@ -349,6 +350,14 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
           labelPosition="left"
           checked={overwrite}
           onChange={(e) => setOverwrite(e.currentTarget.checked)}
+          styles={{ body: { width: "100%", justifyContent: "space-between" } }}
+          py="sm"
+        />
+        <Switch
+          label={t("Create import summary")}
+          labelPosition="left"
+          checked={createSummary}
+          onChange={(e) => setCreateSummary(e.currentTarget.checked)}
           styles={{ body: { width: "100%", justifyContent: "space-between" } }}
           py="sm"
         />
