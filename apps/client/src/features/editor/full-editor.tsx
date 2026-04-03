@@ -18,6 +18,7 @@ export interface FullEditorProps {
   content: string;
   spaceSlug: string;
   editable: boolean;
+  canComment?: boolean;
 }
 
 export function FullEditor({
@@ -27,6 +28,7 @@ export function FullEditor({
   content,
   spaceSlug,
   editable,
+  canComment,
 }: FullEditorProps) {
   const [user] = useAtom(userAtom);
   const fullPageWidth = user.settings?.preferences?.fullPageWidth;
@@ -52,6 +54,7 @@ export function FullEditor({
         editable={editable}
         content={content}
         onYdocReady={handleYdocReady}
+        canComment={canComment}
       />
     </Container>
   );

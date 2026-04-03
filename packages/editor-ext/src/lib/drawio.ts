@@ -1,5 +1,6 @@
-import { Node, mergeAttributes, ResizableNodeView } from "@tiptap/core";
-import type { ResizableNodeViewDirection } from "@tiptap/core";
+import { Node, mergeAttributes } from "@tiptap/core";
+import { ResizableNodeView } from "./resizable-nodeview";
+import type { ResizableNodeViewDirection } from "./resizable-nodeview";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { normalizeFileUrl } from "./media-utils";
 
@@ -319,12 +320,11 @@ export const Drawio = Node.create<DrawioOptions>({
 
       // Show skeleton background while image loads from server
       dom.style.pointerEvents = "none";
-      dom.style.background =
-        "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-6))";
+      el.classList.add("media-pulse");
 
       const clearLoadingStyle = () => {
         dom.style.pointerEvents = "";
-        dom.style.background = "";
+        el.classList.remove("media-pulse");
       };
       el.addEventListener("load", clearLoadingStyle, { once: true });
       el.addEventListener("error", clearLoadingStyle, { once: true });

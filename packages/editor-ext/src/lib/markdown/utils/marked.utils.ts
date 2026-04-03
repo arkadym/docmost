@@ -17,39 +17,27 @@ marked.use({
       }
       return false;
     },
-  },
-});
-
-marked.use({
-  renderer: {
-    // @ts-ignore - marked v17 passes the list token object, not positional (body, ordered, start)
-    list(token: any): string {
-      const isOrdered = token.ordered;
-      const start = token.start;
-      const items: any[] = token.items || [];
-      // Render items via the renderer (respects the listitem override below)
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
-      const self = this as any;
-      const body = items.map((item: any) => self.listitem(item)).join('');
-      if (isOrdered) {
-        const startAttr = start && start !== 1 ? ` start="${start}"` : "";
+    list({ ordered, start, items }) {
+      let body = "";
+      for (const item of items) {
+        body += this.listitem(item);
+      }
+      if (ordered) {
+        const startAttr = start !== 1 ? ` start="${start}"` : "";
         return `<ol${startAttr}>\n${body}</ol>\n`;
       }
-      const dataType = items.some((item: any) => item.task) ? ' data-type="taskList"' : "";
+
+      const isTaskList = items.some((item) => item.task);
+      const dataType = isTaskList ? ' data-type="taskList"' : "";
       return `<ul${dataType}>\n${body}</ul>\n`;
     },
-    // @ts-ignore - marked v17 passes a token object
-    listitem(token: any): string {
-      const isTask = token.task;
-      const isChecked = token.checked;
-      // Use parser to render child tokens (handles nested lists, bold, etc.)
-      const self = this as any;
-      const children = self.parser?.parse(token.tokens, !!token.loose) ?? token.text ?? '';
+    listitem({ tokens, task: isTask, checked: isChecked }) {
+      const text = this.parser.parse(tokens);
       if (!isTask) {
-        return `<li>${children}</li>\n`;
+        return `<li>${text}</li>\n`;
       }
       const checkedAttr = isChecked ? 'data-checked="true"' : 'data-checked="false"';
-      return `<li data-type="taskItem" ${checkedAttr}>${children}</li>\n`;
+      return `<li data-type="taskItem" ${checkedAttr}>${text}</li>\n`;
     },
   },
 });
