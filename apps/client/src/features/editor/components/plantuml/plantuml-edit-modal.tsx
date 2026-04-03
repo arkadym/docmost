@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Button,
@@ -53,18 +53,46 @@ export function PlantUmlEditModal({
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewedCodeRef = useRef<string>(initialSrc ? initialCode : "");
+  const hasUserEdited = useRef(false);
+  // Starts true on every open — disabled until Yjs stops delivering updates.
+  // This prevents the user from ever seeing or editing truncated code caused
+  // by opening the modal before the collaboration server finishes syncing.
+  const [isCodeSettling, setIsCodeSettling] = useState(false);
 
-  // Reset state when modal opens
+  const scheduleSettle = useCallback((delay = 500) => {
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => setIsCodeSettling(false), delay);
+  }, []);
+
+  // Reset and lock on every open. scheduleSettle(0) unlocks on next tick if
+  // Yjs is already synced; if updates arrive they reset the timer to 500 ms.
   useEffect(() => {
     if (opened) {
+      hasUserEdited.current = false;
+      setIsCodeSettling(true);
       setPlantUmlCode(initialCode);
       setError(null);
       setPreviewSrc(initialSrc);
       setPreviewError(null);
       previewedCodeRef.current = initialSrc ? initialCode : "";
+      scheduleSettle(0);
+    } else {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
     }
   }, [opened]);
+
+  // Accept Yjs updates while settling. Each update resets the timer to 500 ms
+  // so we stay locked until Yjs goes quiet.
+  useEffect(() => {
+    if (opened && !hasUserEdited.current) {
+      setPlantUmlCode(initialCode);
+      setPreviewSrc(initialSrc);
+      previewedCodeRef.current = initialSrc ? initialCode : "";
+      scheduleSettle(500);
+    }
+  }, [initialCode]);
 
   // Debounced preview render
   useEffect(() => {
@@ -147,8 +175,12 @@ export function PlantUmlEditModal({
         <div style={{ flex: 1, minWidth: 0, overflowY: "auto" }}>
           <Textarea
             value={plantUmlCode}
-            onChange={(e) => setPlantUmlCode(e.target.value)}
-            placeholder={t("Enter PlantUML code...")}
+            disabled={isCodeSettling}
+            onChange={(e) => {
+              hasUserEdited.current = true;
+              setPlantUmlCode(e.target.value);
+            }}
+            placeholder={isCodeSettling ? t("Syncing document…") : t("Enter PlantUML code...")}
             autosize
             minRows={20}
             styles={{ input: { fontFamily: "monospace", fontSize: "13px" } }}
@@ -231,7 +263,7 @@ export function PlantUmlEditModal({
           <Button variant="default" onClick={onClose}>
             {t("Cancel")}
           </Button>
-          <Button onClick={handleSave} loading={isRendering}>
+          <Button onClick={handleSave} loading={isRendering} disabled={isCodeSettling}>
             {t("Save")}
           </Button>
         </Group>
