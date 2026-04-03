@@ -629,7 +629,20 @@ export class FileImportTaskService {
                 }
               : (fmDates ?? {});
 
-            const pageTitle = title || titleOverride || page.name;
+            // Only let the extracted heading override the filename when it is
+            // a genuine expansion of it (i.e. the filename is a prefix of the
+            // header title). This prevents Joplin duplicate-file suffixes like
+            // "_1" or date suffixes from being silently dropped:
+            //   "Задачи_1" (filename) vs "Задачи" (header) → header does NOT
+            //     start with filename "Задачи_1" → keep filename ✓
+            //   "Тестовое задание" (filename) vs "Тестовое задание (простое)"
+            //     (header) → header starts with filename → use header ✓
+            const candidateTitle = title || titleOverride;
+            const pageTitle =
+              candidateTitle &&
+              candidateTitle.toLowerCase().startsWith(page.name.toLowerCase())
+                ? candidateTitle
+                : page.name || candidateTitle || '';
             const ydoc = await this.importService.createYdoc(
               prosemirrorJson,
               importedProperties,

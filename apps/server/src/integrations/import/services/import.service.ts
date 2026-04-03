@@ -139,7 +139,14 @@ export class ImportService {
     const { title, prosemirrorJson } =
       this.extractTitleAndRemoveHeading(prosemirrorState);
 
-    const pageTitle = title || titleOverride || fileName;
+    // Only let the extracted heading override the filename when it is
+    // a genuine expansion of it (filename is a prefix of the header title).
+    const candidateTitle = title || titleOverride;
+    const pageTitle =
+      candidateTitle &&
+      candidateTitle.toLowerCase().startsWith(fileName.toLowerCase())
+        ? candidateTitle
+        : fileName || candidateTitle || '';
 
     if (prosemirrorJson) {
       try {
