@@ -16,6 +16,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import useToggleAside from "@/hooks/use-toggle-aside.tsx";
 import { useAtom, useAtomValue } from "jotai";
+import { asideStateAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
 import { historyAtoms } from "@/features/page-history/atoms/history-atoms.ts";
 import { useDisclosure, useHotkeys } from "@mantine/hooks";
 import { useClipboard } from "@/hooks/use-clipboard";
@@ -47,6 +48,7 @@ interface PageHeaderMenuProps {
 export default function PageHeaderMenu({ readOnly }: PageHeaderMenuProps) {
   const { t } = useTranslation();
   const toggleAside = useToggleAside();
+  const { tab: asideTab, isAsideOpen } = useAtomValue(asideStateAtom);
 
   useHotkeys(
     [
@@ -79,8 +81,8 @@ export default function PageHeaderMenu({ readOnly }: PageHeaderMenuProps) {
 
       <Tooltip label={t("Comments")} openDelay={250} withArrow>
         <ActionIcon
-          variant="subtle"
-          color="dark"
+          variant={isAsideOpen && asideTab === "comments" ? "light" : "subtle"}
+          color={isAsideOpen && asideTab === "comments" ? undefined : "gray"}
           onClick={() => toggleAside("comments")}
         >
           <IconMessage size={20} stroke={2} />
@@ -89,8 +91,8 @@ export default function PageHeaderMenu({ readOnly }: PageHeaderMenuProps) {
 
       <Tooltip label={t("Table of contents")} openDelay={250} withArrow>
         <ActionIcon
-          variant="subtle"
-          color="dark"
+          variant={isAsideOpen && asideTab === "toc" ? "light" : "subtle"}
+          color={isAsideOpen && asideTab === "toc" ? undefined : "gray"}
           onClick={() => toggleAside("toc")}
         >
           <IconList size={20} stroke={2} />

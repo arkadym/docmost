@@ -347,7 +347,6 @@ export default function PageEditor({
   useEffect(() => {
     setActiveCommentId(null);
     setShowCommentPopup(false);
-    setAsideState({ tab: "", isAsideOpen: false });
   }, [pageId]);
 
   const isSynced = isLocalSynced && isRemoteSynced;

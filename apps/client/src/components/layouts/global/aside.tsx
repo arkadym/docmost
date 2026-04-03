@@ -1,4 +1,4 @@
-import { Box, ScrollArea, Text } from "@mantine/core";
+import { ActionIcon, Box, Group, ScrollArea, Text } from "@mantine/core";
 import CommentListWithTabs from "@/features/comment/components/comment-list-with-tabs.tsx";
 import { useAtom } from "jotai";
 import { asideStateAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
@@ -7,9 +7,11 @@ import { useTranslation } from "react-i18next";
 import { TableOfContents } from "@/features/editor/components/table-of-contents/table-of-contents.tsx";
 import { useAtomValue } from "jotai";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms.ts";
+import { IconX } from "@tabler/icons-react";
 
 export default function Aside() {
-  const [{ tab }] = useAtom(asideStateAtom);
+  const [asideState, setAsideState] = useAtom(asideStateAtom);
+  const { tab } = asideState;
   const { t } = useTranslation();
   const pageEditor = useAtomValue(pageEditorAtom);
 
@@ -34,9 +36,17 @@ export default function Aside() {
     <Box p="md" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {component && (
         <>
-          <Text mb="md" fw={500}>
-            {t(title)}
-          </Text>
+          <Group justify="space-between" mb="md">
+            <Text fw={500}>{t(title)}</Text>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => setAsideState({ tab, isAsideOpen: false })}
+            >
+              <IconX size={16} />
+            </ActionIcon>
+          </Group>
 
           {tab === "comments" ? (
             <CommentListWithTabs />
