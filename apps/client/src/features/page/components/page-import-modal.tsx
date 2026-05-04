@@ -15,6 +15,7 @@ import {
   IconCheck,
   IconFileCode,
   IconFileTypeDocx,
+  IconFileTypePdf,
   IconFileTypeZip,
   IconMarkdown,
   IconX,
@@ -96,6 +97,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
   const markdownFileRef = useRef<() => void>(null);
   const htmlFileRef = useRef<() => void>(null);
   const docxFileRef = useRef<() => void>(null);
+  const pdfFileRef = useRef<() => void>(null);
   const notionFileRef = useRef<() => void>(null);
   const confluenceFileRef = useRef<() => void>(null);
   const joplinFileRef = useRef<() => void>(null);
@@ -103,6 +105,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
 
   const canUseConfluence = useHasFeature(Feature.CONFLUENCE_IMPORT);
   const canUseDocx = useHasFeature(Feature.DOCX_IMPORT);
+  const canUsePdf = useHasFeature(Feature.PDF_IMPORT);
   const upgradeLabel = useUpgradeLabel();
 
   const handleZipUpload = async (selectedFile: File, source: string) => {
@@ -253,7 +256,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
     }, 3000);
   }, [fileTaskId]);
 
-  const maxSingleFileSize = bytes("20mb");
+  const maxSingleFileSize = bytes("30mb");
 
   const handleFileUpload = async (selectedFiles: File[]) => {
     if (!selectedFiles) {
@@ -307,6 +310,7 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
       if (markdownFileRef.current) markdownFileRef.current();
       if (htmlFileRef.current) htmlFileRef.current();
       if (docxFileRef.current) docxFileRef.current();
+      if (pdfFileRef.current) pdfFileRef.current();
 
       const pageCountText =
         pageCount === 1 ? `1 ${t("page")}` : `${pageCount} ${t("pages")}`;
@@ -409,6 +413,30 @@ function ImportFormatSelection({ spaceId, onClose }: ImportFormatSelection) {
                 {...props}
               >
                 Word (DOCX)
+              </Button>
+            </Tooltip>
+          )}
+        </FileButton>
+
+        <FileButton
+          onChange={handleFileUpload}
+          accept=".pdf"
+          multiple
+          resetRef={pdfFileRef}
+        >
+          {(props) => (
+            <Tooltip
+              label={upgradeLabel}
+              disabled={canUsePdf}
+            >
+              <Button
+                disabled={!canUsePdf}
+                justify="start"
+                variant="default"
+                leftSection={<IconFileTypePdf size={18} />}
+                {...props}
+              >
+                PDF
               </Button>
             </Tooltip>
           )}

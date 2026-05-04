@@ -14,6 +14,7 @@ import {
   IconWorld,
   IconSparkles,
   IconHistory,
+  IconShieldCheck,
 } from "@tabler/icons-react";
 import { Link, useLocation } from "react-router-dom";
 import classes from "./settings.module.css";
@@ -30,11 +31,13 @@ import {
   prefetchBilling,
   prefetchGroups,
   prefetchLicense,
+  prefetchScimTokens,
   prefetchShares,
   prefetchSpaces,
   prefetchSsoProviders,
   prefetchWorkspaceMembers,
   prefetchAuditLogs,
+  prefetchVerifiedPages,
 } from "@/components/settings/settings-queries.tsx";
 import AppVersion from "@/components/settings/app-version.tsx";
 import { mobileSidebarAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
@@ -95,6 +98,12 @@ const groupedData: DataGroup[] = [
       { label: "Groups", icon: IconUsersGroup, path: "/settings/groups" },
       { label: "Spaces", icon: IconSpaces, path: "/settings/spaces" },
       { label: "Public sharing", icon: IconWorld, path: "/settings/sharing" },
+      {
+        label: "Verified pages",
+        icon: IconShieldCheck,
+        path: "/settings/verifications",
+        feature: Feature.PAGE_VERIFICATION,
+      },
       {
         label: "API management",
         icon: IconKey,
@@ -196,7 +205,10 @@ export default function SettingsSidebar() {
               }
               break;
             case "Security & SSO":
-              prefetchHandler = prefetchSsoProviders;
+              prefetchHandler = () => {
+                prefetchSsoProviders();
+                prefetchScimTokens();
+              };
               break;
             case "Public sharing":
               prefetchHandler = prefetchShares;
@@ -209,6 +221,9 @@ export default function SettingsSidebar() {
               break;
             case "Audit log":
               prefetchHandler = prefetchAuditLogs;
+              break;
+            case "Verified pages":
+              prefetchHandler = prefetchVerifiedPages;
               break;
             default:
               break;
