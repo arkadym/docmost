@@ -8,6 +8,7 @@ import { TableOfContents } from "@/features/editor/components/table-of-contents/
 import { useAtomValue } from "jotai";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms.ts";
 import { IconX } from "@tabler/icons-react";
+import AsideChatPanel from "@/ee/ai-chat/components/aside-chat-panel";
 
 export default function Aside() {
   const [asideState, setAsideState] = useAtom(asideStateAtom);
@@ -27,6 +28,10 @@ export default function Aside() {
       component = <TableOfContents editor={pageEditor} />;
       title = "Table of contents";
       break;
+    case "chat":
+      component = <AsideChatPanel />;
+      title = "AI Chat";
+      break;
     default:
       component = null;
       title = null;
@@ -36,20 +41,22 @@ export default function Aside() {
     <Box p="md" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {component && (
         <>
-          <Group justify="space-between" mb="md">
-            <Text fw={500}>{t(title)}</Text>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              onClick={() => setAsideState({ tab, isAsideOpen: false })}
-            >
-              <IconX size={16} />
-            </ActionIcon>
-          </Group>
+          {tab !== "chat" && (
+            <Group justify="space-between" mb="md">
+              <Text fw={500}>{t(title)}</Text>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                onClick={() => setAsideState({ tab, isAsideOpen: false })}
+              >
+                <IconX size={16} />
+              </ActionIcon>
+            </Group>
+          )}
 
-          {tab === "comments" ? (
-            <CommentListWithTabs />
+          {tab === "comments" || tab === "chat" ? (
+            component
           ) : (
             <ScrollArea
               style={{ height: "85vh" }}
