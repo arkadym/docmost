@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Group, Text, ScrollArea, ActionIcon, Tooltip } from "@mantine/core";
+import { Group, Text, ScrollArea, ActionIcon } from "@mantine/core";
 import {
   IconUser,
   IconSettings,
@@ -24,7 +24,6 @@ import useUserRole from "@/hooks/use-user-role.tsx";
 import { useAtom } from "jotai";
 import { entitlementAtom } from "@/ee/entitlement/entitlement-atom";
 import { Feature } from "@/ee/features";
-import { useUpgradeLabel } from "@/ee/hooks/use-upgrade-label";
 import {
   prefetchApiKeyManagement,
   prefetchApiKeys,
@@ -116,6 +115,7 @@ const groupedData: DataGroup[] = [
         icon: IconSparkles,
         path: "/settings/ai",
         role: "admin",
+        feature: Feature.AI,
       },
       {
         label: "Audit log",
@@ -146,7 +146,6 @@ export default function SettingsSidebar() {
   const { goBack } = useSettingsNavigation();
   const { isAdmin, isOwner } = useUserRole();
   const [entitlements] = useAtom(entitlementAtom);
-  const upgradeLabel = useUpgradeLabel();
   const [mobileSidebarOpened] = useAtom(mobileSidebarAtom);
   const toggleMobileSidebar = useToggleSidebar(mobileSidebarAtom);
 
@@ -229,46 +228,27 @@ export default function SettingsSidebar() {
               break;
           }
 
-          const isDisabled = isItemDisabled(item);
+          if (isItemDisabled(item)) {
+            return null;
+          }
+
           const linkElement = (
             <Link
-              onMouseEnter={!isDisabled ? prefetchHandler : undefined}
+              onMouseEnter={prefetchHandler}
               className={classes.link}
               data-active={active.startsWith(item.path) || undefined}
-              data-disabled={isDisabled || undefined}
               key={item.label}
-              to={isDisabled ? "#" : item.path}
-              onClick={(e) => {
-                if (isDisabled) {
-                  e.preventDefault();
-                  return;
-                }
+              to={item.path}
+              onClick={() => {
                 if (mobileSidebarOpened) {
                   toggleMobileSidebar();
                 }
-              }}
-              style={{
-                opacity: isDisabled ? 0.5 : 1,
-                cursor: isDisabled ? "not-allowed" : "pointer",
               }}
             >
               <item.icon className={classes.linkIcon} stroke={2} />
               <span>{t(item.label)}</span>
             </Link>
           );
-
-          if (isDisabled) {
-            return (
-              <Tooltip
-                key={item.label}
-                label={upgradeLabel}
-                position="right"
-                withArrow
-              >
-                {linkElement}
-              </Tooltip>
-            );
-          }
 
           return linkElement;
         })}
