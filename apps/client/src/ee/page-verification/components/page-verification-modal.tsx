@@ -10,7 +10,6 @@ import { extractPageSlugId } from "@/lib";
 import { usePageQuery } from "@/features/page/queries/page-query";
 import { usePageVerificationInfoQuery } from "@/ee/page-verification/queries/page-verification-query";
 import { useHasFeature } from "@/ee/hooks/use-feature";
-import { useUpgradeLabel } from "@/ee/hooks/use-upgrade-label";
 import { Feature } from "@/ee/features";
 import { SetupVerificationForm } from "./setup-verification-form";
 import { ManageVerificationForm } from "./manage-verification-form";
@@ -86,22 +85,10 @@ export function PageVerificationBadge({
   const { data: verificationInfo, isLoading } = usePageVerificationInfoQuery(
     hasVerificationFeature ? pageId : undefined,
   );
-  const upgradeLabel = useUpgradeLabel();
 
   if (!pageId) return null;
   if (!hasVerificationFeature) {
-    if (readOnly) return null;
-    return (
-      <Tooltip
-        label={`${t("Add verification")} — ${upgradeLabel}`}
-        withArrow
-        openDelay={250}
-      >
-        <ActionIcon variant="subtle" color="gray">
-          <IconShieldCheck size={20} stroke={1.5} />
-        </ActionIcon>
-      </Tooltip>
-    );
+    return null;
   }
   if (isLoading) return null;
 
@@ -152,7 +139,6 @@ export function PageVerificationMenuItem({
 }: PageVerificationMenuItemProps) {
   const { t } = useTranslation();
   const hasVerificationFeature = useHasFeature(Feature.PAGE_VERIFICATION);
-  const upgradeLabel = useUpgradeLabel();
 
   const { data: verificationInfo } = usePageVerificationInfoQuery(
     hasVerificationFeature ? pageId : undefined,
@@ -175,11 +161,7 @@ export function PageVerificationMenuItem({
   );
 
   if (!hasVerificationFeature) {
-    return (
-      <Tooltip label={upgradeLabel} position="left" withinPortal={false}>
-        {menuItem}
-      </Tooltip>
-    );
+    return null;
   }
 
   return menuItem;
